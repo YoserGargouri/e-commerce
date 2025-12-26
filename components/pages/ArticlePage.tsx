@@ -1,7 +1,7 @@
 "use client"
-import { Search, ShoppingCart } from "lucide-react"
+import { Search, ShoppingCart, Filter, X } from "lucide-react"
 import Image from "next/image"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Page, Product } from "@/types"
 import { Header } from "@/components/layout/Header"
 import { Footer } from "@/components/layout/Footer"
@@ -34,6 +34,23 @@ export function ArticlePage({ onNavigate, onAddToCart, cartItemsCount = 0 }: Art
   const [selectedCategory, setSelectedCategory] = useState<number | undefined>(undefined)
   const [selectedPriceRange, setSelectedPriceRange] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
+  const [sidebarOpen, setSidebarOpen] = useState(false) // false sur mobile (masquée), true sur desktop (visible par défaut)
+  const [isDesktop, setIsDesktop] = useState(false)
+
+  // Détecter si on est sur desktop
+  useEffect(() => {
+    const checkDesktop = () => {
+      setIsDesktop(window.innerWidth >= 1024) // lg breakpoint
+      // Sur desktop, sidebar visible par défaut
+      if (window.innerWidth >= 1024) {
+        setSidebarOpen(true)
+      }
+    }
+    
+    checkDesktop()
+    window.addEventListener('resize', checkDesktop)
+    return () => window.removeEventListener('resize', checkDesktop)
+  }, [])
 
   // Récupérer les catégories
   const { data: categories, isLoading: isLoadingCategories } = useCategories()
@@ -106,74 +123,136 @@ export function ArticlePage({ onNavigate, onAddToCart, cartItemsCount = 0 }: Art
     <div className="min-h-screen bg-stone-100">
       <Header currentPage="article" onNavigate={onNavigate} cartItemsCount={cartItemsCount} />
 
-      <div className="max-w-7xl mx-auto px-6 py-12">
-        <div className="flex gap-6">
-          <aside className="w-64 flex-shrink-0">
-            <div className="bg-white rounded-lg p-6 mb-6 border border-gray-300">
-              <h3 className="font-bold text-gray-800 mb-4">Découvrez notre collection</h3>
-              <select
-                value={selectedCategory || ""}
-                onChange={(e) => setSelectedCategory(e.target.value ? Number(e.target.value) : undefined)}
-                className="w-full px-3 py-2 border border-gray-300 rounded text-sm text-gray-700 focus:outline-none hover:border-gray-400"
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-6 sm:py-12">
+        {/* Bouton toggle sidebar pour mobile */}
+        <div className="lg:hidden mb-4 flex items-center justify-between">
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            <Filter size={18} />
+            Filtres
+            {sidebarOpen && <X size={18} className="ml-1" />}
+          </button>
+          <div className="text-sm text-gray-600">
+            {filteredProducts.length} produit{filteredProducts.length > 1 ? 's' : ''}
+          </div>
+        </div>
+
+        <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 relative">
+          {/* Overlay pour mobile */}
+          {sidebarOpen && (
+            <div
+              className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+              onClick={() => setSidebarOpen(false)}
+            />
+          )}
+
+          {/* Sidebar */}
+          <aside
+            className={`
+              fixed lg:sticky top-0 lg:top-20
+              left-0 h-full lg:h-auto
+              w-80 max-w-[85vw] lg:w-64
+              bg-white lg:bg-transparent
+              z-50 lg:z-auto
+              transform transition-transform duration-300 ease-in-out
+              ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+              ${!sidebarOpen && isDesktop ? 'lg:hidden' : ''}
+              lg:flex-shrink-0
+              overflow-y-auto lg:overflow-visible
+              shadow-xl lg:shadow-none
+              p-4 lg:p-0
+            `}
+          >
+            {/* Bouton fermer pour mobile */}
+            <div className="flex items-center justify-between mb-4 lg:hidden">
+              <h2 className="text-lg font-bold text-gray-900">Filtres</h2>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="p-2 text-gray-600 hover:text-gray-900"
+                aria-label="Fermer les filtres"
               >
-                <option value="">Toutes les catégories</option>
-                {isLoadingCategories ? (
-                  <option disabled>Chargement...</option>
-                ) : (
-                  activeCategories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.nom}
-                    </option>
-                  ))
-                )}
-              </select>
+                <X size={24} />
+              </button>
             </div>
 
-            <div className="bg-white rounded-lg p-6 border border-gray-300 mb-6">
-              <h3 className="font-bold text-gray-800 mb-4">Tranche de prix</h3>
-              <select 
-                value={selectedPriceRange}
-                onChange={(e) => setSelectedPriceRange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded text-sm text-gray-700 focus:outline-none hover:border-gray-400"
-              >
-                {priceRanges.map((range) => (
-                  <option key={range.value} value={range.value}>
-                    {range.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="bg-white rounded-lg p-6 border border-gray-300">
-              <div className="text-sm text-gray-700 font-medium mb-4">
-                {filteredProducts.length} produit{filteredProducts.length > 1 ? 's' : ''} trouvé{filteredProducts.length > 1 ? 's' : ''}
+            <div className="space-y-4 lg:space-y-0">
+              <div className="bg-white rounded-lg p-4 sm:p-6 mb-4 sm:mb-6 border border-gray-300">
+                <h3 className="font-bold text-gray-800 mb-3 sm:mb-4 text-sm sm:text-base">Découvrez notre collection</h3>
+                <select
+                  value={selectedCategory || ""}
+                  onChange={(e) => setSelectedCategory(e.target.value ? Number(e.target.value) : undefined)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm text-gray-700 focus:outline-none hover:border-gray-400"
+                >
+                  <option value="">Toutes les catégories</option>
+                  {isLoadingCategories ? (
+                    <option disabled>Chargement...</option>
+                  ) : (
+                    activeCategories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.nom}
+                      </option>
+                    ))
+                  )}
+                </select>
               </div>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="w-full px-3 py-2 border border-gray-300 rounded text-sm text-gray-700 focus:outline-none"
-              >
-                {sortOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+
+              <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-300 mb-4 sm:mb-6">
+                <h3 className="font-bold text-gray-800 mb-3 sm:mb-4 text-sm sm:text-base">Tranche de prix</h3>
+                <select 
+                  value={selectedPriceRange}
+                  onChange={(e) => setSelectedPriceRange(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm text-gray-700 focus:outline-none hover:border-gray-400"
+                >
+                  {priceRanges.map((range) => (
+                    <option key={range.value} value={range.value}>
+                      {range.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-300">
+                <div className="text-xs sm:text-sm text-gray-700 font-medium mb-3 sm:mb-4">
+                  {filteredProducts.length} produit{filteredProducts.length > 1 ? 's' : ''} trouvé{filteredProducts.length > 1 ? 's' : ''}
+                </div>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as SortOption)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm text-gray-700 focus:outline-none"
+                >
+                  {sortOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </aside>
 
           <div className="flex-1">
-            <div className="flex gap-4 mb-8 items-center">
+            <div className="flex gap-2 sm:gap-4 mb-6 sm:mb-8 items-center">
               <div className="flex-1 relative">
                 <input
                   type="text"
                   placeholder="Rechercher un produit..."
-                  className="w-full px-4 py-3 border-2 border-gray-800 rounded-lg text-sm focus:outline-none"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-gray-800 rounded-lg text-xs sm:text-sm focus:outline-none"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
-                <Search className="absolute right-3 top-3 w-5 h-5 text-gray-600 pointer-events-none" />
+                <Search className="absolute right-2 sm:right-3 top-2 sm:top-3 w-4 h-4 sm:w-5 sm:h-5 text-gray-600 pointer-events-none" />
               </div>
+              {/* Bouton toggle sidebar pour desktop */}
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="hidden lg:flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                aria-label="Toggle sidebar"
+              >
+                <Filter size={18} />
+                {sidebarOpen ? 'Masquer' : 'Afficher'} filtres
+              </button>
             </div>
 
             {isLoadingProducts ? (
@@ -190,7 +269,7 @@ export function ArticlePage({ onNavigate, onAddToCart, cartItemsCount = 0 }: Art
                 ))}
               </div>
             ) : filteredProducts.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                 {filteredProducts.map((product) => {
                   const categoryName = activeCategories.find(cat => cat.id === product.category_id)?.nom || ""
                   return (
@@ -219,10 +298,11 @@ export function ArticlePage({ onNavigate, onAddToCart, cartItemsCount = 0 }: Art
                         <p className="text-sm font-bold text-gray-800 mb-4">{product.prix.toFixed(2)} DTN</p>
                         <button
                           onClick={() => handleAddToCart(product)}
-                          className="w-full bg-[#c3aa8c] hover:bg-[#b39977] text-white py-2 rounded text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+                          className="w-full bg-[#c3aa8c] hover:bg-[#b39977] text-white py-2 rounded text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-colors"
                         >
-                          <ShoppingCart size={16} />
-                          Ajouter au panier
+                          <ShoppingCart size={14} className="sm:w-4 sm:h-4" />
+                          <span className="hidden sm:inline">Ajouter au panier</span>
+                          <span className="sm:hidden">Ajouter</span>
                         </button>
                       </div>
                     </div>

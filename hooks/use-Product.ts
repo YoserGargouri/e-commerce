@@ -1,4 +1,4 @@
-import { useQuery, UseQueryResult } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, UseQueryResult } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase/client';
 
 export interface Produit {
@@ -27,6 +27,81 @@ export interface UseProductsOptions {
   sortBy?: SortOption;
   filters?: ProductFilters;
   enabled?: boolean;
+}
+
+export interface ProduitInsert {
+  nom: string;
+  description?: string | null;
+  category_id: number;
+  prix: number;
+  image_principale?: string | null;
+  image_secondaire?: string | null;
+  est_nouveau: boolean;
+}
+
+export interface ProduitUpdate {
+  nom?: string;
+  description?: string | null;
+  category_id?: number;
+  prix?: number;
+  image_principale?: string | null;
+  image_secondaire?: string | null;
+  est_nouveau?: boolean;
+  updated_at?: string;
+}
+
+export type ProductImageType = 'principale' | 'secondaire';
+
+export async function uploadProductImage(
+  file: File,
+  options: {
+    bucket?: string;
+    folder?: string;
+    productId?: string;
+    type?: ProductImageType;
+  } = {}
+): Promise<string> {
+  const { bucket = 'product-images', folder = 'produits', productId, type } = options;
+
+  if (!file) {
+    throw new Error('Aucun fichier sélectionné.')
+  }
+
+  // Upload via endpoint serveur pour éviter les problèmes de policies Storage côté navigateur.
+  const form = new FormData()
+  form.append('image', file)
+  form.append('bucket', bucket)
+  form.append('folder', folder)
+  if (productId) form.append('productId', productId)
+  if (type) form.append('type', type)
+
+  const res = await fetch('/upload-simple', {
+    method: 'POST',
+    body: form,
+  })
+
+  let payload: unknown = null
+  try {
+    payload = await res.json()
+  } catch {
+    // ignore
+  }
+
+  if (!res.ok) {
+    const message =
+      payload && typeof payload === 'object' && 'error' in payload
+        ? String((payload as any).error)
+        : `Échec de l'envoi de l'image (HTTP ${res.status}).`
+    throw new Error(message)
+  }
+
+  const url =
+    payload && typeof payload === 'object' && 'url' in payload ? String((payload as any).url) : ''
+  if (!url) {
+    throw new Error("Impossible de récupérer l'URL publique de l'image.")
+  }
+
+  return url
 }
 
 export function useProducts(
@@ -77,7 +152,7 @@ export function useProducts(
       const { data, error } = await query;
 
       if (error) {
-        throw new Error(`Failed to fetch products: ${error.message}`);
+        throw new Error(`Échec de la récupération des produits : ${error.message}`);
       }
 
       return (data || []) as Produit[];
@@ -86,6 +161,102 @@ export function useProducts(
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 15 * 60 * 1000, // 15 minutes
     retry: 1,
+  });
+}
+
+export function useCreateProduit() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: ProduitInsert) => {
+      const { data, error } = await supabase
+        .from('produit')
+        .insert([payload])
+        .select('*')
+        .single();
+
+      if (error) {
+        throw new Error(`Échec de l'ajout du produit : ${error.message}`);
+      }
+
+      return data as Produit;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+  });
+}
+
+export function useUpdateProduit() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      updates,
+    }: {
+      id: string;
+      updates: ProduitUpdate;
+    }) => {
+      const finalUpdates: ProduitUpdate = {
+        ...updates,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { data, error } = await supabase
+        .from('produit')
+        .update(finalUpdates)
+        .eq('id', id)
+        .select('*')
+        .single();
+
+      if (error) {
+        throw new Error(`Échec de la modification du produit : ${error.message}`);
+      }
+
+      return data as Produit;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['product'] });
+    },
+  });
+}
+
+export function useDeleteProduit() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('produit').delete().eq('id', id);
+      if (error) {
+        throw new Error(`Échec de la suppression du produit : ${error.message}`);
+      }
+      return true;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+  });
+}
+
+export function useUploadProductImage() {
+  return useMutation({
+    mutationFn: async ({
+      file,
+      bucket,
+      folder,
+      productId,
+      type,
+    }: {
+      file: File;
+      bucket?: string;
+      folder?: string;
+      productId?: string;
+      type?: ProductImageType;
+    }) => {
+      return uploadProductImage(file, { bucket, folder, productId, type });
+    },
   });
 }
 
@@ -104,7 +275,7 @@ export function useProduct(productId: string): UseQueryResult<Produit | null, Er
         if (error.code === 'PGRST116') {
           return null;
         }
-        throw new Error(`Failed to fetch product: ${error.message}`);
+        throw new Error(`Échec de la récupération du produit : ${error.message}`);
       }
 
       return data as Produit;

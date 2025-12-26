@@ -121,7 +121,7 @@ export default function Page() {
     case "article":
       return <ArticlePage onNavigate={handleNavigate} onAddToCart={handleAddToCart} cartItemsCount={cartItems.length} />
     case "cart":
-      return (
+  return (
         <CartPage
           onNavigate={handleNavigate}
           cartItems={cartItems}
