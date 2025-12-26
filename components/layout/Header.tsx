@@ -1,10 +1,13 @@
+"use client"
+import { useState } from "react"
 import Image from "next/image"
-import { Search, User, ShoppingCart } from "lucide-react"
+import { Search, User, ShoppingCart, Menu, X } from "lucide-react"
 import { Page } from "@/types"
 import { useSiteData } from '@/hooks/use-SiteData'
 import { ModeToggle } from "@/components/common/ModeToggle"
 import { useAdminMode } from "@/hooks/useAdminMode"
 import Link from "next/link"
+
 interface HeaderProps {
   currentPage?: Page
   onNavigate: (page: Page) => void
@@ -22,26 +25,43 @@ export function Header({
 }: HeaderProps) {
   const { data: siteSettings } = useSiteData()
   const { isAdmin } = useAdminMode()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  
+  const handleNavClick = (page: Page) => {
+    onNavigate(page)
+    setMobileMenuOpen(false)
+  }
   
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-300">
-      <div className="max-w-7xl mx-auto px-6 py-[0.8rem] flex items-center justify-between">
-        <Image
-          src={siteSettings?.logo_url || ""}
-          alt="Logo Décoration Bourbiaa"
-          width={100}
-          height={100}
-          priority
-        />
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-[0.8rem] flex items-center justify-between">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-2 text-gray-700 hover:text-black"
+            aria-label="Menu"
+          >
+            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+          <div className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24">
+            <Image
+              src={siteSettings?.logo_url || ""}
+              alt="Logo"
+              fill
+              className="object-contain"
+              priority
+            />
+          </div>
+        </div>
 
-        <nav className="hidden md:flex gap-8">
+        <nav className="hidden md:flex gap-6 lg:gap-8">
           <button
             onClick={() => onNavigate("home")}
             className={`text-sm font-medium ${
               currentPage === "home" ? "text-black font-semibold" : "text-gray-700 hover:text-black"
             }`}
           >
-Accueil
+            Accueil
           </button>
           <button
             onClick={() => onNavigate("article")}
@@ -49,7 +69,7 @@ Accueil
               currentPage === "article" ? "text-black font-semibold" : "text-gray-700 hover:text-black"
             }`}
           >
-Boutique
+            Boutique
           </button>
           <button
             onClick={() => onNavigate("about")}
@@ -57,7 +77,7 @@ Boutique
               currentPage === "about" ? "text-black font-semibold" : "text-gray-700 hover:text-black"
             }`}
           >
-À propos
+            À propos
           </button>
           <button
             onClick={() => onNavigate("contact")}
@@ -65,7 +85,7 @@ Boutique
               currentPage === "contact" ? "text-black font-semibold" : "text-gray-700 hover:text-black"
             }`}
           >
-Contact
+            Contact
           </button>
           {isAdmin && (
             <Link
@@ -77,18 +97,67 @@ Contact
           )}
         </nav>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           <ModeToggle />
-          <button onClick={() => onNavigate("cart")} className="text-gray-700 hover:text-black relative" aria-label="Panier">
+          <button onClick={() => handleNavClick("cart")} className="text-gray-700 hover:text-black relative p-2" aria-label="Panier">
             <ShoppingCart size={20} />
             {cartItemsCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-amber-700 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+              <span className="absolute top-0 right-0 bg-amber-700 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                 {cartItemsCount}
               </span>
             )}
           </button>
         </div>
       </div>
+
+      {/* Menu mobile */}
+      {mobileMenuOpen && (
+        <div className="md:hidden border-t border-gray-300 bg-white">
+          <nav className="flex flex-col px-4 py-4 space-y-3">
+            <button
+              onClick={() => handleNavClick("home")}
+              className={`text-left text-base font-medium py-2 ${
+                currentPage === "home" ? "text-black font-semibold" : "text-gray-700"
+              }`}
+            >
+              Accueil
+            </button>
+            <button
+              onClick={() => handleNavClick("article")}
+              className={`text-left text-base font-medium py-2 ${
+                currentPage === "article" ? "text-black font-semibold" : "text-gray-700"
+              }`}
+            >
+              Boutique
+            </button>
+            <button
+              onClick={() => handleNavClick("about")}
+              className={`text-left text-base font-medium py-2 ${
+                currentPage === "about" ? "text-black font-semibold" : "text-gray-700"
+              }`}
+            >
+              À propos
+            </button>
+            <button
+              onClick={() => handleNavClick("contact")}
+              className={`text-left text-base font-medium py-2 ${
+                currentPage === "contact" ? "text-black font-semibold" : "text-gray-700"
+              }`}
+            >
+              Contact
+            </button>
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="text-left text-base font-medium text-red-600 hover:text-red-700 py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Admin
+              </Link>
+            )}
+          </nav>
+        </div>
+      )}
     </header>
   )
 }

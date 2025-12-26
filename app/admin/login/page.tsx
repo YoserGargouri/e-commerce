@@ -69,26 +69,26 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-3 sm:p-4">
       <div className="w-full max-w-md">
         {/* Logo/Brand Section */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-[#c3aa8c] hover:bg-[#b39977] rounded-2xl shadow-lg mb-4 transition-colors">
-            <Shield className="w-10 h-10 text-white" />
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-[#c3aa8c] hover:bg-[#b39977] rounded-2xl shadow-lg mb-3 sm:mb-4 transition-colors">
+            <Shield className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Administration</h1>
-          <p className="text-gray-600">Panneau de contrôle</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Administration</h1>
+          <p className="text-sm sm:text-base text-gray-600">Panneau de contrôle</p>
         </div>
 
         <Card className="shadow-xl border border-gray-200 bg-white">
-          <CardHeader className="space-y-1 pb-4">
-            <CardTitle className="text-2xl font-bold text-center text-gray-900">Connexion</CardTitle>
-            <CardDescription className="text-center text-gray-600">
+          <CardHeader className="space-y-1 pb-3 sm:pb-4 px-4 sm:px-6">
+            <CardTitle className="text-xl sm:text-2xl font-bold text-center text-gray-900">Connexion</CardTitle>
+            <CardDescription className="text-center text-sm sm:text-base text-gray-600">
               Entrez vos identifiants pour accéder au panneau d'administration
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-5">
+          <CardContent className="px-4 sm:px-6">
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
               {/* Error Message */}
               {error && (
                 <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-r-lg flex items-start gap-2">
