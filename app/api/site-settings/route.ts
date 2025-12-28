@@ -36,7 +36,6 @@ export async function GET() {
 
     return NextResponse.json({ data: data ?? null })
   } catch (e) {
-    console.error("Erreur GET /api/site-settings:", e)
     return NextResponse.json(
       { error: "Erreur interne lors du chargement des paramètres du site." },
       { status: 500 }
@@ -98,7 +97,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ data: created })
   } catch (e) {
-    console.error("Erreur POST /api/site-settings:", e)
     return NextResponse.json(
       { error: "Erreur interne lors de l'enregistrement des paramètres du site." },
       { status: 500 }

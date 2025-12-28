@@ -3,8 +3,10 @@ import React from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Package, TrendingUp, ShoppingBag, Clock } from "lucide-react"
 import { useLastCommandes, useDashboardStats } from "@/hooks/use-Commandes"
+import { useRouter } from "next/navigation"
 
 export function AdminDashboard() {
+  const router = useRouter()
   const { data: stats, isLoading: loadingStats } = useDashboardStats()
   const { data: lastCommandes, isLoading: loadingCommandes } = useLastCommandes(5)
 
@@ -98,7 +100,16 @@ export function AdminDashboard() {
               {lastCommandes.map((commande) => (
                 <div
                   key={commande.id}
-                  className="flex flex-col h-full p-3 sm:p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex flex-col h-full p-3 sm:p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                  onClick={() => router.push(`/admin/orders?id=${commande.id}`)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault()
+                      router.push(`/admin/orders?id=${commande.id}`)
+                    }
+                  }}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-2">
                     <div className="font-semibold text-gray-900 text-sm sm:text-base">

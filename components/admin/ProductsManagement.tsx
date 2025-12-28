@@ -9,10 +9,11 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Search, Plus, Edit, Trash2, X } from "lucide-react"
-import { useProducts } from "@/hooks/use-Product"
+import { uploadProductImage, useProducts } from "@/hooks/use-Product"
 import { useCategories } from "@/hooks/use_category"
 import { supabase } from "@/lib/supabase/client"
 import { useQueryClient } from "@tanstack/react-query"
+import { toast } from "@/hooks/use-toast"
 import type { Produit } from "@/hooks/use-Product"
 
 export function ProductsManagement() {
@@ -29,6 +30,21 @@ export function ProductsManagement() {
     est_nouveau: false,
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [imagePrincipaleFile, setImagePrincipaleFile] = useState<File | null>(null)
+  const [imageSecondaireFile, setImageSecondaireFile] = useState<File | null>(null)
+  const [imagePrincipalePreview, setImagePrincipalePreview] = useState<string>("")
+  const [imageSecondairePreview, setImageSecondairePreview] = useState<string>("")
+
+  useEffect(() => {
+    return () => {
+      if (imagePrincipalePreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(imagePrincipalePreview)
+      }
+      if (imageSecondairePreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(imageSecondairePreview)
+      }
+    }
+  }, [imagePrincipalePreview, imageSecondairePreview])
 
   const { data: products, isLoading } = useProducts()
   const { data: categories } = useCategories()
@@ -51,6 +67,10 @@ export function ProductsManagement() {
       image_secondaire: "",
       est_nouveau: false,
     })
+    setImagePrincipaleFile(null)
+    setImageSecondaireFile(null)
+    setImagePrincipalePreview("")
+    setImageSecondairePreview("")
     setIsDialogOpen(true)
   }
 
@@ -65,6 +85,10 @@ export function ProductsManagement() {
       image_secondaire: product.image_secondaire || "",
       est_nouveau: product.est_nouveau,
     })
+    setImagePrincipaleFile(null)
+    setImageSecondaireFile(null)
+    setImagePrincipalePreview(product.image_principale || "")
+    setImageSecondairePreview(product.image_secondaire || "")
     setIsDialogOpen(true)
   }
 
@@ -82,10 +106,17 @@ export function ProductsManagement() {
       if (error) throw error
 
       queryClient.invalidateQueries({ queryKey: ["products"] })
-      alert("Produit supprimé avec succès")
+      toast({
+        title: "Succès",
+        description: "Produit supprimé avec succès.",
+        variant: "success",
+      })
     } catch (error) {
-      console.error("Error deleting product:", error)
-      alert("Erreur lors de la suppression du produit")
+      toast({
+        title: "Erreur",
+        description: "Erreur lors de la suppression du produit.",
+        variant: "destructive",
+      })
     }
   }
 
@@ -94,33 +125,98 @@ export function ProductsManagement() {
     setIsSubmitting(true)
 
     try {
-      const productData = {
+      const productDataBase = {
         nom: formData.nom,
         description: formData.description || null,
         category_id: parseInt(formData.category_id),
         prix: parseFloat(formData.prix),
-        image_principale: formData.image_principale || null,
-        image_secondaire: formData.image_secondaire || null,
         est_nouveau: formData.est_nouveau,
       }
 
       if (editingProduct) {
+        let imagePrincipaleUrl = formData.image_principale || null
+        let imageSecondaireUrl = formData.image_secondaire || null
+
+        if (imagePrincipaleFile) {
+          imagePrincipaleUrl = await uploadProductImage(imagePrincipaleFile, {
+            productId: String(editingProduct.id),
+            type: "principale",
+          })
+        }
+
+        if (imageSecondaireFile) {
+          imageSecondaireUrl = await uploadProductImage(imageSecondaireFile, {
+            productId: String(editingProduct.id),
+            type: "secondaire",
+          })
+        }
+
         // Update existing product
         const { error } = await supabase
           .from("produit")
-          .update(productData)
+          .update({
+            ...productDataBase,
+            image_principale: imagePrincipaleUrl,
+            image_secondaire: imageSecondaireUrl,
+          })
           .eq("id", editingProduct.id)
 
         if (error) throw error
-        alert("Produit modifié avec succès")
+        toast({
+          title: "Succès",
+          description: "Produit modifié avec succès.",
+          variant: "success",
+        })
       } else {
-        // Create new product
-        const { error } = await supabase
+        const { data: inserted, error: insertError } = await supabase
           .from("produit")
-          .insert([productData])
+          .insert([
+            {
+              ...productDataBase,
+              image_principale: null,
+              image_secondaire: null,
+            },
+          ])
+          .select("id")
+          .single()
 
-        if (error) throw error
-        alert("Produit ajouté avec succès")
+        if (insertError) throw insertError
+
+        const insertedId = inserted?.id
+        let imagePrincipaleUrl: string | null = null
+        let imageSecondaireUrl: string | null = null
+
+        if (insertedId && imagePrincipaleFile) {
+          imagePrincipaleUrl = await uploadProductImage(imagePrincipaleFile, {
+            productId: String(insertedId),
+            type: "principale",
+          })
+        }
+
+        if (insertedId && imageSecondaireFile) {
+          imageSecondaireUrl = await uploadProductImage(imageSecondaireFile, {
+            productId: String(insertedId),
+            type: "secondaire",
+          })
+        }
+
+        if (insertedId && (imagePrincipaleUrl || imageSecondaireUrl)) {
+          const { error: updateImagesError } = await supabase
+            .from("produit")
+            .update({
+              image_principale: imagePrincipaleUrl,
+              image_secondaire: imageSecondaireUrl,
+            })
+            .eq("id", insertedId)
+
+          if (updateImagesError) throw updateImagesError
+        }
+
+        toast({
+          title: "Succès",
+          description: "Produit ajouté avec succès.",
+          variant: "success",
+        })
       }
 
       queryClient.invalidateQueries({ queryKey: ["products"] })
@@ -134,9 +230,16 @@ export function ProductsManagement() {
         image_secondaire: "",
         est_nouveau: false,
       })
+      setImagePrincipaleFile(null)
+      setImageSecondaireFile(null)
+      setImagePrincipalePreview("")
+      setImageSecondairePreview("")
     } catch (error) {
-      console.error("Error saving product:", error)
-      alert("Erreur lors de l'enregistrement du produit")
+      toast({
+        title: "Erreur",
+        description: "Erreur lors de l'enregistrement du produit.",
+        variant: "destructive",
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -425,27 +528,33 @@ export function ProductsManagement() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="image_principale" className="text-sm">URL Image principale</Label>
+              <Label htmlFor="image_principale" className="text-sm">Image principale</Label>
               <Input
                 id="image_principale"
-                type="url"
-                value={formData.image_principale}
-                onChange={(e) => setFormData({ ...formData, image_principale: e.target.value })}
-                placeholder="https://example.com/image.jpg"
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null
+                  setImagePrincipaleFile(file)
+                  if (file) {
+                    const url = URL.createObjectURL(file)
+                    setImagePrincipalePreview(url)
+                    setFormData({ ...formData, image_principale: "" })
+                  } else {
+                    setImagePrincipalePreview(editingProduct?.image_principale || "")
+                  }
+                }}
                 className="text-sm"
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="image_secondaire" className="text-sm">URL Image secondaire</Label>
-              <Input
-                id="image_secondaire"
-                type="url"
-                value={formData.image_secondaire}
-                onChange={(e) => setFormData({ ...formData, image_secondaire: e.target.value })}
-                placeholder="https://example.com/image2.jpg"
-                className="text-sm"
-              />
+              {imagePrincipalePreview ? (
+                <div className="pt-2">
+                  <img
+                    src={imagePrincipalePreview}
+                    alt="Aperçu image principale"
+                    className="w-24 h-24 object-cover rounded border"
+                  />
+                </div>
+              ) : null}
             </div>
 
             <div className="flex justify-end gap-2 pt-4">

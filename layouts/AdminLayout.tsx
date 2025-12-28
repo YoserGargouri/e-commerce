@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { LayoutDashboard, Package, Settings, LogOut, Box, Menu, X } from "lucide-react"
 import Link from "next/link"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { useSiteData } from "@/hooks/use-SiteData"
 
 interface AdminLayoutProps {
   children: ReactNode
@@ -16,14 +17,13 @@ interface AdminLayoutProps {
 export function AdminLayout({ children }: AdminLayoutProps) {
   const { exitAdminMode } = useAdminMode()
   const { logout } = useAuth()
+  const { data: siteSettings } = useSiteData()
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [isDesktop, setIsDesktop] = useState(false)
 
   useEffect(() => {
     const checkDesktop = () => {
       const isDesktopView = window.innerWidth >= 1024
-      setIsDesktop(isDesktopView)
       // Sur desktop, sidebar toujours visible (pas besoin de state)
       // Sur mobile, sidebar masquée par défaut
       if (!isDesktopView) {
@@ -81,7 +81,15 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                   </nav>
                 </SheetContent>
               </Sheet>
-              
+
+              {siteSettings?.logo_url ? (
+                <img
+                  src={siteSettings.logo_url}
+                  alt="Logo"
+                  className="h-[5.5rem] w-[5.5rem] sm:h-[3.05rem] sm:w-[3.05rem] object-contain rounded bg-white"
+                />
+              ) : null}
+
               <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">Administration</h1>
               <span className="px-2 sm:px-3 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded-full whitespace-nowrap">
                 MODE ADMIN

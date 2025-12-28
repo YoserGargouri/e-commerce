@@ -93,7 +93,6 @@ async function saveToCSV(orderData: OrderData) {
 
     return csvFile
   } catch (error) {
-    console.error("Error saving to CSV:", error)
     throw error
   }
 }
@@ -120,7 +119,6 @@ async function saveToJSON(orderData: OrderData) {
         const content = await readFile(jsonFile, "utf-8")
         orders = JSON.parse(content)
       } catch (error) {
-        console.warn("Could not read existing orders file, starting fresh")
       }
     }
 
@@ -132,7 +130,6 @@ async function saveToJSON(orderData: OrderData) {
 
     return jsonFile
   } catch (error) {
-    console.error("Error saving to JSON:", error)
     throw error
   }
 }
@@ -201,7 +198,6 @@ async function readOrders(): Promise<OrderData[]> {
     const content = await readFile(jsonFile, "utf-8")
     return JSON.parse(content) as OrderData[]
   } catch (error) {
-    console.error("Error reading orders:", error)
     return []
   }
 }
@@ -218,7 +214,6 @@ async function deleteOrder(orderId: string): Promise<boolean> {
     await writeFile(jsonFile, JSON.stringify(filteredOrders, null, 2), "utf-8")
     return true
   } catch (error) {
-    console.error("Error deleting order:", error)
     return false
   }
 }
@@ -264,7 +259,6 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ error: "Action non valide" }, { status: 400 })
   } catch (error) {
-    console.error("Error fetching orders:", error)
     return NextResponse.json(
       { error: "Erreur lors de la récupération des commandes" },
       { status: 500 }
@@ -292,7 +286,6 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ success: true, message: "Commande supprimée avec succès" })
   } catch (error) {
-    console.error("Error deleting order:", error)
     return NextResponse.json(
       { error: "Erreur lors de la suppression de la commande" },
       { status: 500 }
@@ -371,7 +364,6 @@ export async function POST(request: Request) {
       },
     })
   } catch (error) {
-    console.error("Error processing order:", error)
     return NextResponse.json(
       { error: "Erreur lors de l'enregistrement de la commande" },
       { status: 500 }
