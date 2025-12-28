@@ -116,7 +116,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, url: data.publicUrl, path, bucket })
   } catch (e) {
-    console.error("Erreur upload-simple:", e)
     return NextResponse.json(
       { error: "Erreur interne lors de l'upload." },
       { status: 500 }

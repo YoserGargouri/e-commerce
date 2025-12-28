@@ -4,6 +4,7 @@ import { Page, CartItem } from "@/types"
 import { Header } from "@/components/layout/Header"
 import { Footer } from "@/components/layout/Footer"
 import { useSiteData } from "@/hooks/use-SiteData"
+import { toast } from "@/hooks/use-toast"
 
 interface CheckoutPageProps {
   onNavigate: (page: Page) => void
@@ -32,8 +33,8 @@ export function CheckoutPage({ onNavigate, cartItems, onClearCart }: CheckoutPag
     const quantity = item.quantity || 1
     return sum + price * quantity
   }, 0)
-  const tax = subtotal * 0.1
-  const total = subtotal + tax
+  const shippingFee = siteSettings?.frais_livraison ?? 0
+  const total = subtotal + shippingFee
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -45,12 +46,20 @@ export function CheckoutPage({ onNavigate, cartItems, onClearCart }: CheckoutPag
     
     // Validation basique
     if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone || !formData.streetAddress || !formData.city) {
-      alert("Veuillez remplir tous les champs obligatoires")
+      toast({
+        title: "Erreur",
+        description: "Veuillez remplir tous les champs obligatoires.",
+        variant: "destructive",
+      })
       return
     }
 
     if (cartItems.length === 0) {
-      alert("Votre panier est vide")
+      toast({
+        title: "Erreur",
+        description: "Votre panier est vide.",
+        variant: "destructive",
+      })
       return
     }
 
@@ -69,7 +78,6 @@ export function CheckoutPage({ onNavigate, cartItems, onClearCart }: CheckoutPag
           image: item.image,
         })),
         subtotal,
-        tax,
         total,
       }
 
@@ -92,15 +100,21 @@ export function CheckoutPage({ onNavigate, cartItems, onClearCart }: CheckoutPag
       onClearCart()
       
       // Rediriger vers une page de confirmation ou home
-      alert(`Commande passée avec succès !\nNuméro de commande: ${result.numero_commande}`)
+      toast({
+        title: "Succès",
+        description: `Commande passée avec succès. N°: ${result.numero_commande}`,
+        variant: "success",
+      })
       onNavigate("home")
     } catch (error) {
-      console.error("Error submitting order:", error)
-      alert(
-        error instanceof Error
-          ? error.message
-          : "Une erreur est survenue lors de la commande. Veuillez réessayer."
-      )
+      toast({
+        title: "Erreur",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Erreur lors de l'envoi de la commande.",
+        variant: "destructive",
+      })
     } finally {
       setIsSubmitting(false)
     }

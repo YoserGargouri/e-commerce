@@ -16,7 +16,6 @@ interface SiteSettings {
   frais_livraison: number | null;
   facebook_url: string | null;
   instagram_url: string | null;
-  tiktok_url: string | null;
   google_maps_embed: string | null;
   latitude: number | null;
   longitude: number | null;

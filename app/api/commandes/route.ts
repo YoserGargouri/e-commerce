@@ -26,7 +26,7 @@ function buildOrderNumber() {
   const mi = String(now.getMinutes()).padStart(2, "0")
   const ss = String(now.getSeconds()).padStart(2, "0")
   const rand = Math.floor(Math.random() * 9000) + 1000
-  return `CMD-${yyyy}${mm}${dd}-${hh}${mi}${ss}-${rand}`
+  return `CMD-${yyyy}${mm}${dd}-${hh}${mi}${ss}`
 }
 
 function parsePrice(value: unknown) {
@@ -86,7 +86,24 @@ export async function POST(request: Request) {
     const numero_commande = buildOrderNumber()
 
     const sous_total = typeof body.subtotal === "number" && Number.isFinite(body.subtotal) ? body.subtotal : 0
-    const total_commande = typeof body.total === "number" && Number.isFinite(body.total) ? body.total : sous_total
+
+    const { data: settingsRow } = await supabaseAdmin
+      .from("site_settings")
+      .select("frais_livraison")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    const frais_livraison_raw = (settingsRow as any)?.frais_livraison
+    const frais_livraison =
+      typeof frais_livraison_raw === "number"
+        ? frais_livraison_raw
+        : typeof frais_livraison_raw === "string"
+          ? Number.parseFloat(frais_livraison_raw.replace(",", "."))
+          : 0
+    const fraisLivraisonSafe = Number.isFinite(frais_livraison) && frais_livraison > 0 ? frais_livraison : 0
+
+    const total_commande = sous_total + fraisLivraisonSafe
 
     const formattedItems = items.map((it) => {
       const quantity = typeof it.quantity === "number" && it.quantity > 0 ? it.quantity : 1
@@ -111,7 +128,7 @@ export async function POST(request: Request) {
       client_zipcode: (body.zipCode ?? "").trim() || null,
       client_country: (body.country ?? "").trim() || null,
       sous_total,
-      frais_livraison: 0,
+      frais_livraison: fraisLivraisonSafe,
       total_commande,
       items: formattedItems,
       // statut_commande / statut_paiement: defaults en base
@@ -132,7 +149,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, id: data.id, numero_commande: data.numero_commande })
   } catch (e) {
-    console.error("Erreur POST /api/commandes:", e)
     return NextResponse.json(
       { error: "Erreur interne lors de l'enregistrement de la commande." },
       { status: 500 }

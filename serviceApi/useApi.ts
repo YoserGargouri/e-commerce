@@ -21,7 +21,6 @@ api.interceptors.request.use(
             config.headers.Authorization = `Bearer ${parsedToken.access_token}`
           }
         } catch (e) {
-          console.error('Error parsing token:', e)
         }
       }
     }
@@ -35,19 +34,12 @@ api.interceptors.response.use(
   (response) => response,
   (error: unknown) => {
     if (axios.isAxiosError(error)) {
-      console.error('API Error:', {
-        url: error.config?.url,
-        status: error.response?.status,
-        message: error.message,
-      })
-
       if (typeof window !== 'undefined' && error.response?.status === 401) {
         localStorage.removeItem('supabase.auth.token')
         window.location.href = '/login'
       }
     } else {
       // Erreur non Axios (erreur JS générique)
-      console.error('Unexpected API Error:', error)
     }
 
     return Promise.reject(error)
