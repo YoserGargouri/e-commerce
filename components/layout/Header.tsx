@@ -4,7 +4,6 @@ import Image from "next/image"
 import { Search, User, ShoppingCart, Menu, X } from "lucide-react"
 import { Page } from "@/types"
 import { useSiteData } from '@/hooks/use-SiteData'
-import { ModeToggle } from "@/components/common/ModeToggle"
 import { useAdminMode } from "@/hooks/useAdminMode"
 import Link from "next/link"
 
@@ -87,18 +86,10 @@ export function Header({
           >
             Contact
           </button>
-          {isAdmin && (
-            <Link
-              href="/admin"
-              className="text-sm font-medium text-red-600 hover:text-red-700"
-            >
-              Admin
-            </Link>
-          )}
         </nav>
 
         <div className="flex items-center gap-2 sm:gap-4">
-          <ModeToggle />
+
           <button onClick={() => handleNavClick("cart")} className="text-gray-700 hover:text-black relative p-2" aria-label="Panier">
             <ShoppingCart size={20} />
             {cartItemsCount > 0 && (
@@ -146,15 +137,6 @@ export function Header({
             >
               Contact
             </button>
-            {isAdmin && (
-              <Link
-                href="/admin"
-                className="text-left text-base font-medium text-red-600 hover:text-red-700 py-2"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Admin
-              </Link>
-            )}
           </nav>
         </div>
       )}
