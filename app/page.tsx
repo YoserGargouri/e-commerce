@@ -21,7 +21,6 @@ const loadCartFromStorage = (): CartItem[] => {
       return JSON.parse(stored) as CartItem[]
     }
   } catch (error) {
-    console.error("Error loading cart from storage:", error)
   }
   return []
 }
@@ -33,7 +32,6 @@ const saveCartToStorage = (items: CartItem[]) => {
   try {
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items))
   } catch (error) {
-    console.error("Error saving cart to storage:", error)
   }
 }
 
@@ -44,7 +42,6 @@ const clearCartFromStorage = () => {
   try {
     localStorage.removeItem(CART_STORAGE_KEY)
   } catch (error) {
-    console.error("Error clearing cart from storage:", error)
   }
 }
 
@@ -121,7 +118,7 @@ export default function Page() {
     case "article":
       return <ArticlePage onNavigate={handleNavigate} onAddToCart={handleAddToCart} cartItemsCount={cartItems.length} />
     case "cart":
-      return (
+  return (
         <CartPage
           onNavigate={handleNavigate}
           cartItems={cartItems}

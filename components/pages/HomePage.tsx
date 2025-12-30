@@ -53,54 +53,54 @@ export function HomePage({ onNavigate, cartItemsCount, onAddToCart }: HomePagePr
       <Header currentPage="home" onNavigate={onNavigate} cartItemsCount={cartItemsCount} showSearch={false} showUser={false} />
 
       <section className="bg-gradient-to-b from-stone-200 to-stone-100">
-        <div className="max-w-7xl mx-auto px-6 lg: flex items-stretch gap-8">
-          <div className="flex-1 flex flex-col justify-center">
-            <h1 className="text-4xl lg:text-5xl font-bold text-black leading-tight mb-4">
-           {siteSettings?.site_name}
-            </h1>
-            <p className="text-base text-gray-800 mb-4 font-light">Collection haut de gamme de décoration intérieure</p>
-            <p className="text-gray-700 text-sm leading-relaxed mb-6 max-w-md">
-              {siteSettings?.site_description}
-            </p>
-            <button
-              onClick={() => onNavigate("article")}
-              className="inline-block px-8 py-3 bg-[#c3aa8c] hover:bg-[#b39977] text-white font-medium rounded text-sm w-fit"
-            >
-Découvrir la collection
-            </button>
-          </div>
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-6 sm:py-8 lg:py-12">
+          <div className="flex flex-col lg:flex-row items-center lg:items-stretch gap-6 lg:gap-8">
+            <div className="flex-1 flex flex-col justify-center text-center lg:text-left w-full lg:w-auto">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-black leading-tight mb-3 sm:mb-4">
+                {siteSettings?.site_name}
+              </h1>
+              <p className="text-sm sm:text-base text-gray-800 mb-3 sm:mb-4 font-light">Collection haut de gamme de décoration intérieure</p>
+              <p className="text-gray-700 text-xs sm:text-sm leading-relaxed mb-4 sm:mb-6 max-w-md mx-auto lg:mx-0">
+                {siteSettings?.site_description}
+              </p>
+              <button
+                onClick={() => onNavigate("article")}
+                className="inline-block px-6 sm:px-8 py-2 sm:py-3 bg-[#c3aa8c] hover:bg-[#b39977] text-white font-medium rounded text-xs sm:text-sm w-fit mx-auto lg:mx-0"
+              >
+                Découvrir la collection
+              </button>
+            </div>
 
-          <div className="flex-1 flex items-center justify-center">
-            <div
-              className="relative w-full"
-              style={{
-                aspectRatio: "3 / 3.2",
-                height: "90%",
-                maxHeight: "90%",
-              }}
-            >
-              <Image
-                src={"/images/background.png"}
-                alt="Modern interior with arched mirror"
-                fill
-                className="object-cover rounded-lg overflow-hidden"
-                priority
-              />
+            <div className="flex-1 flex items-center justify-center w-full lg:w-auto">
+              <div
+                className="relative w-full max-w-md lg:max-w-none"
+                style={{
+                  aspectRatio: "3 / 3.2",
+                }}
+              >
+                <Image
+                  src={"/images/background.png"}
+                  alt="Modern interior with arched mirror"
+                  fill
+                  className="object-cover rounded-lg overflow-hidden"
+                  priority
+                />
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Articles en avant */}
-      <section className="max-w-7xl mx-auto px-6 py-12">
-        <div className="flex items-center justify-between mb-8">
+      <section className="max-w-7xl mx-auto px-3 sm:px-6 py-8 sm:py-12">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 sm:mb-8">
           <div>
             <p className="text-sm uppercase tracking-[0.2em] text-gray-500"></p>
-            <h2 className="text-3xl font-bold text-gray-900"> Nos derniers articles</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Nos derniers articles</h2>
           </div>
           <button
             onClick={() => onNavigate("article")}
-            className="px-4 py-2 text-sm font-medium text-white bg-[#c3aa8c] hover:bg-[#b39977] rounded"
+            className="px-4 py-2 text-xs sm:text-sm font-medium text-white bg-[#c3aa8c] hover:bg-[#b39977] rounded w-full sm:w-auto"
           >
             Voir tout le catalogue
           </button>
@@ -168,18 +168,19 @@ Découvrir la collection
                           e.stopPropagation()
                           handleAddToCart(product)
                         }}
-                        className="w-full bg-[#c3aa8c] hover:bg-[#b39977] text-white py-2 rounded text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+                        className="w-full bg-[#c3aa8c] hover:bg-[#b39977] text-white py-2 rounded text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-colors"
                       >
-                        <ShoppingCart size={16} />
-                        Ajouter au panier
+                        <ShoppingCart size={14} className="sm:w-4 sm:h-4" />
+                        <span className="hidden sm:inline">Ajouter au panier</span>
+                        <span className="sm:hidden">Ajouter</span>
                       </button>
                     </div>
                   </div>
                 </CarouselItem>
               ))}
             </CarouselContent>
-            <CarouselPrevious className="hidden md:flex -left-4 lg:-left-12" />
-            <CarouselNext className="hidden md:flex -right-4 lg:-right-12" />
+            <CarouselPrevious className="hidden sm:flex -left-2 md:-left-4 lg:-left-12" />
+            <CarouselNext className="hidden sm:flex -right-2 md:-right-4 lg:-right-12" />
           </Carousel>
         ) : (
           <div className="text-center text-gray-500 py-8">
