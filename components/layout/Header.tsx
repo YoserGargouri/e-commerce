@@ -1,11 +1,9 @@
 "use client"
 import { useState } from "react"
 import Image from "next/image"
-import { Search, User, ShoppingCart, Menu, X } from "lucide-react"
+import { ShoppingCart, Menu, X } from "lucide-react"
 import { Page } from "@/types"
 import { useSiteData } from '@/hooks/use-SiteData'
-import { useAdminMode } from "@/hooks/useAdminMode"
-import Link from "next/link"
 
 interface HeaderProps {
   currentPage?: Page
@@ -23,7 +21,6 @@ export function Header({
   showUser = true,
 }: HeaderProps) {
   const { data: siteSettings } = useSiteData()
-  const { isAdmin } = useAdminMode()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   
   const handleNavClick = (page: Page) => {
@@ -43,13 +40,17 @@ export function Header({
             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
           <div className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24">
-            <Image
-              src={siteSettings?.logo_url || ""}
-              alt="Logo"
-              fill
-              className="object-contain"
-              priority
-            />
+            {siteSettings?.logo_url ? (
+              <Image
+                src={siteSettings.logo_url}
+                alt="Logo"
+                fill
+                className="object-contain"
+                priority
+              />
+            ) : (
+              <div className="w-full h-full rounded bg-gray-100" aria-hidden="true" />
+            )}
           </div>
         </div>
 
