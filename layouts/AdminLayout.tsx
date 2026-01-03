@@ -38,7 +38,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const handleLogout = () => {
     logout()
     exitAdminMode()
-    router.push("/admin/login")
+    router.push("/")
   }
 
   const navItems = [

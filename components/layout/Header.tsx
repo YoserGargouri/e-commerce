@@ -1,12 +1,9 @@
 "use client"
 import { useState } from "react"
 import Image from "next/image"
-import { Search, User, ShoppingCart, Menu, X } from "lucide-react"
+import { ShoppingCart, Menu, X } from "lucide-react"
 import { Page } from "@/types"
 import { useSiteData } from '@/hooks/use-SiteData'
-import { ModeToggle } from "@/components/common/ModeToggle"
-import { useAdminMode } from "@/hooks/useAdminMode"
-import Link from "next/link"
 
 interface HeaderProps {
   currentPage?: Page
@@ -24,7 +21,6 @@ export function Header({
   showUser = true,
 }: HeaderProps) {
   const { data: siteSettings } = useSiteData()
-  const { isAdmin } = useAdminMode()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   
   const handleNavClick = (page: Page) => {
@@ -44,13 +40,17 @@ export function Header({
             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
           <div className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24">
-            <Image
-              src={siteSettings?.logo_url || ""}
-              alt="Logo"
-              fill
-              className="object-contain"
-              priority
-            />
+            {siteSettings?.logo_url ? (
+              <Image
+                src={siteSettings.logo_url}
+                alt="Logo"
+                fill
+                className="object-contain"
+                priority
+              />
+            ) : (
+              <div className="w-full h-full rounded bg-gray-100" aria-hidden="true" />
+            )}
           </div>
         </div>
 
@@ -87,18 +87,10 @@ export function Header({
           >
             Contact
           </button>
-          {isAdmin && (
-            <Link
-              href="/admin"
-              className="text-sm font-medium text-red-600 hover:text-red-700"
-            >
-              Admin
-            </Link>
-          )}
         </nav>
 
         <div className="flex items-center gap-2 sm:gap-4">
-          <ModeToggle />
+
           <button onClick={() => handleNavClick("cart")} className="text-gray-700 hover:text-black relative p-2" aria-label="Panier">
             <ShoppingCart size={20} />
             {cartItemsCount > 0 && (
@@ -146,15 +138,6 @@ export function Header({
             >
               Contact
             </button>
-            {isAdmin && (
-              <Link
-                href="/admin"
-                className="text-left text-base font-medium text-red-600 hover:text-red-700 py-2"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Admin
-              </Link>
-            )}
           </nav>
         </div>
       )}
