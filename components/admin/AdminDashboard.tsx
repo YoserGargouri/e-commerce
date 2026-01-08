@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation"
 export function AdminDashboard() {
   const router = useRouter()
   const { data: stats, isLoading: loadingStats } = useDashboardStats()
-  const { data: lastCommandes, isLoading: loadingCommandes } = useLastCommandes(5)
+  const { data: lastCommandes, isLoading: loadingCommandes } = useLastCommandes(6)
 
   const statCards = [
     {
@@ -83,7 +83,7 @@ export function AdminDashboard() {
       {/* Dernières commandes */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg sm:text-xl">5 Dernières commandes</CardTitle>
+          <CardTitle className="text-lg sm:text-xl">6 Dernières commandes</CardTitle>
           <CardDescription className="text-xs sm:text-sm">Commandes récentes mises à jour en temps réel</CardDescription>
         </CardHeader>
         <CardContent>
@@ -101,13 +101,13 @@ export function AdminDashboard() {
                 <div
                   key={commande.id}
                   className="flex flex-col h-full p-3 sm:p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
-                  onClick={() => router.push(`/admin/orders?id=${commande.id}`)}
+                  onClick={() => router.push(`/X/admin/orders?id=${commande.id}`)}
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault()
-                      router.push(`/admin/orders?id=${commande.id}`)
+                      router.push(`/X/admin/orders?id=${commande.id}`)
                     }
                   }}
                 >

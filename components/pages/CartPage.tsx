@@ -23,10 +23,11 @@ export function CartPage({ onNavigate, cartItems, onUpdateQuantity, onRemoveItem
   const total = subtotal +  shippingFee
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white flex flex-col">
       <Header currentPage="cart" onNavigate={onNavigate} cartItemsCount={cartItems.length} />
 
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-6 sm:py-12">
+      <main className="flex-1">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-6 sm:py-12">
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-12">
           <div className="flex-1">
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Panier d'achat</h1>
@@ -219,7 +220,8 @@ export function CartPage({ onNavigate, cartItems, onUpdateQuantity, onRemoveItem
             </div>
           </div>
         </div>
-      </div>
+        </div>
+      </main>
 
       <Footer />
     </div>

@@ -5,7 +5,7 @@ import { useAdminMode } from "@/hooks/useAdminMode"
 import { useAuth } from "@/context/AuthContext"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { LayoutDashboard, Package, Settings, LogOut, Box, Menu, X } from "lucide-react"
+import { LayoutDashboard, Package, Settings, LogOut, Box, Menu, X, Mail } from "lucide-react"
 import Link from "next/link"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { useSiteData } from "@/hooks/use-SiteData"
@@ -20,6 +20,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const { data: siteSettings } = useSiteData()
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [unreadReclamationsCount, setUnreadReclamationsCount] = useState(0)
 
   useEffect(() => {
     const checkDesktop = () => {
@@ -35,6 +36,35 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     return () => window.removeEventListener('resize', checkDesktop)
   }, [])
 
+  useEffect(() => {
+    let cancelled = false
+
+    const loadUnread = async () => {
+      try {
+        const res = await fetch("/api/admin/reclamations/unread-count", { method: "GET" })
+        const json = (await res.json().catch(() => null)) as { count?: number } | { error?: string } | null
+        if (!res.ok) return
+        const count = json && "count" in json && typeof json.count === "number" ? json.count : 0
+        if (!cancelled) setUnreadReclamationsCount(count)
+      } catch {
+        // ignore
+      }
+    }
+
+    const onReclamationsChanged = () => {
+      void loadUnread()
+    }
+
+    void loadUnread()
+    const t = window.setInterval(loadUnread, 15000)
+    window.addEventListener("reclamations:changed", onReclamationsChanged)
+    return () => {
+      cancelled = true
+      window.clearInterval(t)
+      window.removeEventListener("reclamations:changed", onReclamationsChanged)
+    }
+  }, [])
+
   const handleLogout = () => {
     logout()
     exitAdminMode()
@@ -42,17 +72,22 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   }
 
   const navItems = [
-    { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/admin/products", label: "Produits", icon: Box },
-    { href: "/admin/orders", label: "Commandes", icon: Package },
-    { href: "/admin/settings", label: "Paramètres", icon: Settings },
+    { href: "/X/admin", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/X/admin/products", label: "Produits", icon: Box },
+    { href: "/X/admin/orders", label: "Commandes", icon: Package },
+    { href: "/X/admin/reclamations", label: "Réclamations", icon: Mail },
+    { href: "/X/admin/settings", label: "Paramètres", icon: Settings },
   ]
+
+  const reclamationsHref = "/X/admin/reclamations"
+  const showReclamationsBadge = unreadReclamationsCount > 0
+  const reclamationsBadgeText = unreadReclamationsCount > 99 ? "99+" : String(unreadReclamationsCount)
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Admin Header */}
       <header className="bg-white border-b border-gray-200 shadow-sm relative z-10">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
+        <div className="max mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 sm:gap-4">
               {/* Mobile menu button */}
@@ -74,7 +109,14 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                           className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
                         >
                           <Icon className="w-5 h-5" />
-                          {item.label}
+                          <span className="flex items-center gap-2">
+                            {item.label}
+                            {item.href === reclamationsHref && showReclamationsBadge ? (
+                              <span className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[11px] leading-none animate-pulse">
+                                {reclamationsBadgeText}
+                              </span>
+                            ) : null}
+                          </span>
                         </Link>
                       )
                     })}
@@ -82,18 +124,20 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 </SheetContent>
               </Sheet>
 
-              {siteSettings?.logo_url ? (
-                <img
-                  src={siteSettings.logo_url}
-                  alt="Logo"
-                  className="h-[5.5rem] w-[5.5rem] sm:h-[3.05rem] sm:w-[3.05rem] object-contain rounded bg-white"
-                />
-              ) : null}
+              <Link
+                href="/X/admin"
+                className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 inline-flex items-center"
+                aria-label="Aller au dashboard admin"
+              >
+                {siteSettings?.logo_url ? (
+                  <Image src={siteSettings.logo_url} alt="Logo" fill className="object-contain" priority />
+                ) : (
+                  <Image src="/logo.png" alt="Logo" fill className="object-contain" priority />
+                )}
+              </Link>
 
-              <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">Administration</h1>
-              <span className="px-2 sm:px-3 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded-full whitespace-nowrap">
-                MODE ADMIN
-              </span>
+              <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">Administration</h3>
+              
             </div>
             <div className="flex items-center gap-2 sm:gap-4">
               <Button 
@@ -124,7 +168,14 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                   className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
                 >
                   <Icon className="w-5 h-5" />
-                  {item.label}
+                  <span className="flex items-center gap-2">
+                    {item.label}
+                    {item.href === reclamationsHref && showReclamationsBadge ? (
+                      <span className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[11px] leading-none animate-pulse">
+                        {reclamationsBadgeText}
+                      </span>
+                    ) : null}
+                  </span>
                 </Link>
               )
             })}

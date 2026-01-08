@@ -1,6 +1,7 @@
 "use client"
 import { Search, ShoppingCart, Filter, X } from "lucide-react"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 import { useState, useMemo, useEffect } from "react"
 import { Page, Product } from "@/types"
 import { Header } from "@/components/layout/Header"
@@ -30,6 +31,7 @@ const sortOptions: { value: SortOption; label: string }[] = [
 ]
 
 export function ArticlePage({ onNavigate, onAddToCart, cartItemsCount = 0 }: ArticlePageProps) {
+  const router = useRouter()
   const [sortBy, setSortBy] = useState<SortOption>("created_at")
   const [selectedCategory, setSelectedCategory] = useState<number | undefined>(undefined)
   const [selectedPriceRange, setSelectedPriceRange] = useState("all")
@@ -119,11 +121,16 @@ export function ArticlePage({ onNavigate, onAddToCart, cartItemsCount = 0 }: Art
     onAddToCart(convertToProduct(produit))
   }
 
+  const handleOpenProduct = (id: string) => {
+    router.push(`/product/${id}`)
+  }
+
   return (
-    <div className="min-h-screen bg-stone-100">
+    <div className="min-h-screen bg-stone-100 flex flex-col">
       <Header currentPage="article" onNavigate={onNavigate} cartItemsCount={cartItemsCount} />
 
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-6 sm:py-12">
+      <main className="flex-1">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-6 sm:py-12">
         {/* Bouton toggle sidebar pour mobile */}
         <div className="lg:hidden mb-4 flex items-center justify-between">
           <button
@@ -273,7 +280,11 @@ export function ArticlePage({ onNavigate, onAddToCart, cartItemsCount = 0 }: Art
                 {filteredProducts.map((product) => {
                   const categoryName = activeCategories.find(cat => cat.id === product.category_id)?.nom || ""
                   return (
-                    <div key={product.id} className="bg-white rounded-lg overflow-hidden border border-gray-300 hover:shadow-lg transition-shadow">
+                    <div
+                      key={product.id}
+                      className="bg-white rounded-lg overflow-hidden border border-gray-300 hover:shadow-lg transition-shadow cursor-pointer"
+                      onClick={() => handleOpenProduct(product.id)}
+                    >
                       <div className="relative aspect-square bg-gray-200 overflow-hidden">
                         <Image
                           src={product.image_principale || "/images/background.png"}
@@ -286,9 +297,14 @@ export function ArticlePage({ onNavigate, onAddToCart, cartItemsCount = 0 }: Art
                             Nouveau
                           </div>
                         )}
+                        {product.stock === 0 && (
+                          <div className="absolute top-2 left-2 bg-red-600 text-white text-xs px-2 py-1 rounded">
+                            Rupture de stock
+                          </div>
+                        )}
                       </div>
                       <div className="p-4">
-                        <p className="text-sm font-medium text-gray-800 mb-2 line-clamp-2">{product.nom}</p>
+                        <p className="text-sm font-medium text-gray-800 mb-2 line-clamp-2 hover:text-[#c3aa8c] transition-colors">{product.nom}</p>
                         {categoryName && (
                           <p className="text-xs text-gray-600 mb-2">{categoryName}</p>
                         )}
@@ -297,7 +313,10 @@ export function ArticlePage({ onNavigate, onAddToCart, cartItemsCount = 0 }: Art
                         )}
                         <p className="text-sm font-bold text-gray-800 mb-4">{product.prix.toFixed(2)} DTN</p>
                         <button
-                          onClick={() => handleAddToCart(product)}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleAddToCart(product)
+                          }}
                           className="w-full bg-[#c3aa8c] hover:bg-[#b39977] text-white py-2 rounded text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition-colors"
                         >
                           <ShoppingCart size={14} className="sm:w-4 sm:h-4" />
@@ -319,7 +338,8 @@ export function ArticlePage({ onNavigate, onAddToCart, cartItemsCount = 0 }: Art
             )}
           </div>
         </div>
-      </div>
+        </div>
+      </main>
 
       <Footer />
     </div>

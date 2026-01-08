@@ -30,7 +30,7 @@ export function Header({
   
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-300">
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-[0.8rem] flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-[0.72rem] flex items-center justify-between">
         <div className="flex items-center gap-2 sm:gap-4">
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -39,7 +39,12 @@ export function Header({
           >
             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
-          <div className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24">
+          <button
+            type="button"
+            onClick={() => handleNavClick("home")}
+            className="relative w-14 h-14 sm:w-[4.5rem] sm:h-[4.5rem] md:w-[5.5rem] md:h-[5.5rem]"
+            aria-label="Aller à l'accueil"
+          >
             {siteSettings?.logo_url ? (
               <Image
                 src={siteSettings.logo_url}
@@ -51,7 +56,7 @@ export function Header({
             ) : (
               <div className="w-full h-full rounded bg-gray-100" aria-hidden="true" />
             )}
-          </div>
+          </button>
         </div>
 
         <nav className="hidden md:flex gap-6 lg:gap-8">

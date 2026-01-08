@@ -1,7 +1,25 @@
 /** @type {import('next').NextConfig} */
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+let supabaseHostname = undefined
+
+try {
+  supabaseHostname = supabaseUrl ? new URL(supabaseUrl).hostname : undefined
+} catch {
+  supabaseHostname = undefined
+}
+
 const nextConfig = {
   images: {
     unoptimized: true,
+    remotePatterns: supabaseHostname
+      ? [
+          {
+            protocol: 'https',
+            hostname: supabaseHostname,
+            pathname: '/**',
+          },
+        ]
+      : [],
   },
   async headers() {
     return [

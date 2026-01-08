@@ -1,5 +1,6 @@
 import Image from "next/image"
 import { ShoppingCart } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { Page, Product } from "@/types"
 import { Header } from "@/components/layout/Header"
 import { Footer } from "@/components/layout/Footer"
@@ -23,6 +24,7 @@ interface HomePageProps {
 }
 
 export function HomePage({ onNavigate, cartItemsCount, onAddToCart }: HomePageProps) {
+  const router = useRouter()
   const { data: siteSettings } = useSiteData()
   const { data: products, isLoading: isLoadingProducts } = useProducts({
     sortBy: 'created_at',
@@ -47,64 +49,69 @@ export function HomePage({ onNavigate, cartItemsCount, onAddToCart }: HomePagePr
   
   // Limiter à 8 produits pour le carousel
   const latestProducts = products?.slice(0, 8) || []
+
+  const handleOpenProduct = (id: string) => {
+    router.push(`/product/${id}`)
+  }
   
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white flex flex-col">
       <Header currentPage="home" onNavigate={onNavigate} cartItemsCount={cartItemsCount} showSearch={false} showUser={false} />
 
-      <section className="bg-gradient-to-b from-stone-200 to-stone-100">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-6 sm:py-8 lg:py-12">
-          <div className="flex flex-col lg:flex-row items-center lg:items-stretch gap-6 lg:gap-8">
-            <div className="flex-1 flex flex-col justify-center text-center lg:text-left w-full lg:w-auto">
-              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-black leading-tight mb-3 sm:mb-4">
-                {siteSettings?.site_name}
-              </h1>
-              <p className="text-sm sm:text-base text-gray-800 mb-3 sm:mb-4 font-light">Collection haut de gamme de décoration intérieure</p>
-              <p className="text-gray-700 text-xs sm:text-sm leading-relaxed mb-4 sm:mb-6 max-w-md mx-auto lg:mx-0">
-                {siteSettings?.site_description}
-              </p>
-              <button
-                onClick={() => onNavigate("article")}
-                className="inline-block px-6 sm:px-8 py-2 sm:py-3 bg-[#c3aa8c] hover:bg-[#b39977] text-white font-medium rounded text-xs sm:text-sm w-fit mx-auto lg:mx-0"
-              >
-                Découvrir la collection
-              </button>
-            </div>
+      <main className="flex-1">
+        <section className="bg-gradient-to-b from-stone-200 to-stone-100">
+          <div className="max-w-7xl mx-auto px-3 sm:px-6 py-6 sm:py-8 lg:py-12">
+            <div className="flex flex-col lg:flex-row items-center lg:items-stretch gap-6 lg:gap-8">
+              <div className="flex-1 flex flex-col justify-center text-center lg:text-left w-full lg:w-auto">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-black leading-tight mb-3 sm:mb-4">
+                  {siteSettings?.site_name}
+                </h1>
+                <p className="text-sm sm:text-base text-gray-800 mb-3 sm:mb-4 font-light">Collection haut de gamme de décoration intérieure</p>
+                <p className="text-gray-700 text-xs sm:text-sm leading-relaxed mb-4 sm:mb-6 max-w-md mx-auto lg:mx-0">
+                  {siteSettings?.site_description}
+                </p>
+                <button
+                  onClick={() => onNavigate("article")}
+                  className="inline-block px-6 sm:px-8 py-2 sm:py-3 bg-[#c3aa8c] hover:bg-[#b39977] text-white font-medium rounded text-xs sm:text-sm w-fit mx-auto lg:mx-0"
+                >
+                  Découvrir la collection
+                </button>
+              </div>
 
-            <div className="flex-1 flex items-center justify-center w-full lg:w-auto">
-              <div
-                className="relative w-full max-w-md lg:max-w-none"
-                style={{
-                  aspectRatio: "3 / 3.2",
-                }}
-              >
-                <Image
-                  src={"/images/background.png"}
-                  alt="Modern interior with arched mirror"
-                  fill
-                  className="object-cover rounded-lg overflow-hidden"
-                  priority
-                />
+              <div className="flex-1 flex items-center justify-center w-full lg:w-auto">
+                <div
+                  className="relative w-full max-w-md lg:max-w-none"
+                  style={{
+                    aspectRatio: "3 / 3.2",
+                  }}
+                >
+                  <Image
+                    src={"/images/background.png"}
+                    alt="Modern interior with arched mirror"
+                    fill
+                    className="object-cover rounded-lg overflow-hidden"
+                    priority
+                  />
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Articles en avant */}
-      <section className="max-w-7xl mx-auto px-3 sm:px-6 py-8 sm:py-12">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 sm:mb-8">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-gray-500"></p>
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Nos derniers articles</h2>
+        {/* Articles en avant */}
+        <section className="max-w-7xl mx-auto px-3 sm:px-6 py-8 sm:py-12">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 sm:mb-8">
+            <div>
+              <p className="text-sm uppercase tracking-[0.2em] text-gray-500"></p>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Nos derniers articles</h2>
+            </div>
+            <button
+              onClick={() => onNavigate("article")}
+              className="px-4 py-2 text-xs sm:text-sm font-medium text-white bg-[#c3aa8c] hover:bg-[#b39977] rounded w-full sm:w-auto"
+            >
+              Voir tout le catalogue
+            </button>
           </div>
-          <button
-            onClick={() => onNavigate("article")}
-            className="px-4 py-2 text-xs sm:text-sm font-medium text-white bg-[#c3aa8c] hover:bg-[#b39977] rounded w-full sm:w-auto"
-          >
-            Voir tout le catalogue
-          </button>
-        </div>
               
         {isLoadingProducts ? (
           // Skeleton loading
@@ -134,7 +141,7 @@ export function HomePage({ onNavigate, cartItemsCount, onAddToCart }: HomePagePr
                   <div className="bg-white rounded-lg overflow-hidden border border-gray-300 hover:shadow-lg transition-shadow">
                     <div 
                       className="relative aspect-square bg-gray-200 overflow-hidden cursor-pointer"
-                      onClick={() => onNavigate("article")}
+                      onClick={() => handleOpenProduct(product.id)}
                     >
                       <Image
                         src={product.image_principale || "/images/background.png"}
@@ -147,11 +154,16 @@ export function HomePage({ onNavigate, cartItemsCount, onAddToCart }: HomePagePr
                           Nouveau
                         </div>
                       )}
+                      {product.stock === 0 && (
+                        <div className="absolute top-2 left-2 bg-red-600 text-white text-xs px-2 py-1 rounded">
+                          Rupture de stock
+                        </div>
+                      )}
                     </div>
                     <div className="p-4">
                       <h3 
                         className="text-sm font-medium text-gray-800 mb-1 line-clamp-2 cursor-pointer hover:text-[#c3aa8c] transition-colors"
-                        onClick={() => onNavigate("article")}
+                        onClick={() => handleOpenProduct(product.id)}
                       >
                         {product.nom}
                       </h3>
@@ -187,7 +199,8 @@ export function HomePage({ onNavigate, cartItemsCount, onAddToCart }: HomePagePr
             Aucun produit disponible pour le moment.
         </div>
         )}
-      </section>
+        </section>
+      </main>
 
       <Footer />
     </div>
