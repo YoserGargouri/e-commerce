@@ -21,7 +21,7 @@ export default function AdminLoginPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.push("/admin")
+      router.push("/X/admin")
     }
   }, [isAuthenticated, router])
 
@@ -44,7 +44,7 @@ export default function AdminLoginPage() {
 
     if (success) {
       setAttempts(0)
-      router.push("/admin")
+      router.push("/X/admin")
     } else {
       const newAttempts = attempts + 1
       setAttempts(newAttempts)
