@@ -8,11 +8,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Shield, Lock, User, Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react"
 import Link from "next/link"
+import { toast } from "@/components/ui/use-toast"
 
 export default function AdminLoginPage() {
   const router = useRouter()
   const { isAuthenticated, login } = useAuth()
-  const [username, setUsername] = useState("")
+  const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
@@ -25,13 +26,42 @@ export default function AdminLoginPage() {
     }
   }, [isAuthenticated, router])
 
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const params = new URLSearchParams(window.location.search)
+    const emailFromQuery = params.get("email")
+    if (emailFromQuery && !email) {
+      setEmail(emailFromQuery)
+    }
+  }, [email])
+
+  const isValidEmail = (value: string) => /^\S+@\S+\.\S+$/.test(value)
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
 
+    const trimmedEmail = email.trim()
+
     // Validation basique
-    if (!username.trim() || !password.trim()) {
-      setError("Veuillez remplir tous les champs")
+    if (!trimmedEmail || !password.trim()) {
+      const msg = "Veuillez remplir tous les champs"
+      setError(msg)
+      toast({ title: "Champs requis", description: msg, variant: "destructive" })
+      return
+    }
+
+    if (!isValidEmail(trimmedEmail)) {
+      const msg = "Veuillez saisir une adresse email valide"
+      setError(msg)
+      toast({ title: "Email invalide", description: msg, variant: "destructive" })
+      return
+    }
+
+    if (password.length < 6) {
+      const msg = "Le mot de passe doit contenir au moins 6 caractères"
+      setError(msg)
+      toast({ title: "Mot de passe invalide", description: msg, variant: "destructive" })
       return
     }
 
@@ -40,10 +70,14 @@ export default function AdminLoginPage() {
     // Simuler un délai pour une meilleure UX
     await new Promise((resolve) => setTimeout(resolve, 500))
 
-    const success = login(username.trim(), password)
+    const result = await login(trimmedEmail, password)
 
-    if (success) {
+    if (result.success) {
       setAttempts(0)
+      toast({
+        title: "Connexion réussie",
+        description: "Bienvenue dans le panneau d'administration.",
+      })
       router.push("/X/admin")
     } else {
       const newAttempts = attempts + 1
@@ -52,17 +86,23 @@ export default function AdminLoginPage() {
       if (newAttempts >= 3) {
         setError("Trop de tentatives échouées. Veuillez réessayer plus tard.")
       } else {
-        setError(`Nom d'utilisateur ou mot de passe incorrect. Tentative ${newAttempts}/3`)
+        setError(result.error || `Email ou mot de passe incorrect. Tentative ${newAttempts}/3`)
       }
+
+      toast({
+        title: "Connexion échouée",
+        description: result.error || "Email ou mot de passe incorrect.",
+        variant: "destructive",
+      })
       
       setIsLoading(false)
     }
   }
 
-  const handleInputChange = (field: "username" | "password", value: string) => {
+  const handleInputChange = (field: "email" | "password", value: string) => {
     setError("") // Clear error when user starts typing
-    if (field === "username") {
-      setUsername(value)
+    if (field === "email") {
+      setEmail(value)
     } else {
       setPassword(value)
     }
@@ -101,22 +141,22 @@ export default function AdminLoginPage() {
 
               {/* Username Field */}
               <div className="space-y-2">
-                <Label htmlFor="username" className="text-sm font-medium text-gray-700">
-                  Nom d'utilisateur
+                <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                  Email
                 </Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                   <Input
-                    id="username"
-                    type="text"
-                    placeholder="Entrez votre nom d'utilisateur"
-                    value={username}
-                    onChange={(e) => handleInputChange("username", e.target.value)}
+                    id="email"
+                    type="email"
+                    placeholder="vous@exemple.com"
+                    value={email}
+                    onChange={(e) => handleInputChange("email", e.target.value)}
                     className="pl-11 h-11 border-gray-300 focus:border-[#c3aa8c] focus:ring-[#c3aa8c]"
                     required
                     autoFocus
                     disabled={isLoading}
-                    autoComplete="username"
+                    autoComplete="email"
                   />
                 </div>
               </div>
@@ -173,21 +213,23 @@ export default function AdminLoginPage() {
                 )}
               </Button>
 
-              {/* Help Text */}
-              <div className="pt-4 border-t border-gray-200">
-                <div className="text-xs text-center text-gray-500 space-y-1">
-                  <p className="font-semibold text-gray-700 mb-2">Identifiants de démonstration:</p>
-                  <div className="bg-gray-50 rounded-lg p-3 space-y-1 font-mono text-sm border border-gray-200">
-                    <p className="text-gray-700">
-                      <span className="text-gray-500">Utilisateur:</span> admin
-                    </p>
-                    <p className="text-gray-700">
-                      <span className="text-gray-500">Mot de passe:</span> admin123
-                    </p>
-                  </div>
-                </div>
+              <div className="text-center">
+                <Link
+                  href="/X/admin/forgot-password"
+                  className="text-sm text-gray-600 hover:text-[#8B7355] transition-colors"
+                >
+                  Mot de passe oublié ?
+                </Link>
               </div>
 
+              <div className="text-center text-sm text-gray-600">
+                <span>Pas de compte ? </span>
+                <Link href="/X/admin/signup" className="hover:text-[#8B7355] underline underline-offset-4">
+                  Créer un compte
+                </Link>
+              </div>
+
+              {/* Help Text */}
               {/* Back to Site Link */}
               <div className="text-center pt-2">
                 <Link

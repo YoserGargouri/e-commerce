@@ -16,13 +16,23 @@ interface AdminLayoutProps {
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   const { exitAdminMode } = useAdminMode()
-  const { logout } = useAuth()
+  const { isAuthenticated, isLoading, logout } = useAuth()
   const { data: siteSettings } = useSiteData()
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [unreadReclamationsCount, setUnreadReclamationsCount] = useState(0)
 
   useEffect(() => {
+    if (isLoading) return
+    if (!isAuthenticated) {
+      router.push("/X/admin/login")
+    }
+  }, [isAuthenticated, isLoading, router])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    if (!isAuthenticated) return
+
     const checkDesktop = () => {
       const isDesktopView = window.innerWidth >= 1024
       // Sur desktop, sidebar toujours visible (pas besoin de state)
@@ -34,9 +44,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     checkDesktop()
     window.addEventListener('resize', checkDesktop)
     return () => window.removeEventListener('resize', checkDesktop)
-  }, [])
+  }, [isAuthenticated])
 
   useEffect(() => {
+    if (!isAuthenticated) return
+
     let cancelled = false
 
     const loadUnread = async () => {
@@ -63,10 +75,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       window.clearInterval(t)
       window.removeEventListener("reclamations:changed", onReclamationsChanged)
     }
-  }, [])
+  }, [isAuthenticated])
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    await logout()
     exitAdminMode()
     router.push("/")
   }
@@ -82,6 +94,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const reclamationsHref = "/X/admin/reclamations"
   const showReclamationsBadge = unreadReclamationsCount > 0
   const reclamationsBadgeText = unreadReclamationsCount > 99 ? "99+" : String(unreadReclamationsCount)
+
+  if (isLoading || !isAuthenticated) {
+    return null
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
