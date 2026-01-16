@@ -131,7 +131,7 @@ export function ReclamationsList() {
       setSelected(null)
       window.dispatchEvent(new Event("reclamations:changed"))
     } catch (e) {
-      // keep dialog open; error will be shown via page error area next refresh
+      setError(e instanceof Error ? e.message : "Erreur lors de la suppression de la réclamation.")
     } finally {
       setIsDeleting(false)
     }

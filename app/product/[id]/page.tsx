@@ -22,8 +22,21 @@ export default function ProductDetailsPage() {
   const params = useParams<{ id: string }>()
   const productId = params?.id ?? ""
 
+  const [cartItemsCount, setCartItemsCount] = useState(0)
+
   const { data: product, isLoading, isError, error } = useProduct(productId)
   const { data: categories } = useCategories()
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    try {
+      const stored = localStorage.getItem(STORAGE_KEYS.CART)
+      const current = stored ? (JSON.parse(stored) as unknown[]) : []
+      setCartItemsCount(Array.isArray(current) ? current.length : 0)
+    } catch {
+      setCartItemsCount(0)
+    }
+  }, [])
 
   const normalizeImageSrc = (value: string) => {
     const v = value.trim().replace(/\\/g, "/")
@@ -119,6 +132,13 @@ export default function ProductDetailsPage() {
       }
 
       localStorage.setItem(STORAGE_KEYS.CART, JSON.stringify(current))
+
+      // Mettre à jour le badge panier immédiatement
+      setCartItemsCount(Array.isArray(current) ? current.length : 0)
+
+      // Demander à la home d'ouvrir le panier (navigation cross-route)
+      localStorage.setItem("ecommerce_last_page", "cart")
+      router.push("/")
     } catch {
       // ignore
     }
@@ -126,7 +146,18 @@ export default function ProductDetailsPage() {
 
   return (
     <div className="min-h-screen bg-stone-100 overflow-x-hidden flex flex-col">
-      <Header currentPage={undefined} cartItemsCount={0} onNavigate={() => router.push("/")} />
+      <Header
+        currentPage={undefined}
+        cartItemsCount={cartItemsCount}
+        onNavigate={(page) => {
+          try {
+            localStorage.setItem("ecommerce_last_page", page)
+          } catch {
+            // ignore
+          }
+          router.push("/")
+        }}
+      />
 
       <main className="flex-1 w-full px-3 sm:px-6 py-4 sm:py-7">
         <div className="max-w-7xl mx-auto">
