@@ -22,14 +22,11 @@ export async function GET() {
 
     const { count, error } = await supabaseAdmin
       .from("reclamations")
-      .select("id", { count: "exact", head: true })
-      .eq("is_read", false)
+      .select("id", { count: "exact" })
+      .or("is_read.is.null,is_read.eq.false")
 
     if (error) {
-      return NextResponse.json(
-        { error: `Échec du chargement des réclamations non lues : ${error.message}` },
-        { status: 400 }
-      )
+      return NextResponse.json({ count: 0 })
     }
 
     return NextResponse.json({ count: count ?? 0 })
