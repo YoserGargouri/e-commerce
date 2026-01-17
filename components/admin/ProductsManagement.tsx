@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Search, Plus, Edit, Trash2, X, AlertTriangle } from "lucide-react"
 import { uploadProductImage, useProducts } from "@/hooks/use-Product"
-import { useCategories } from "@/hooks/use_category"
+import { useCategories, useCreateCategory, type ProductCategory } from "@/hooks/use_category"
 import { supabase } from "@/lib/supabase/client"
 import { useQueryClient } from "@tanstack/react-query"
 import { toast } from "@/hooks/use-toast"
@@ -47,6 +47,10 @@ export function ProductsManagement() {
   const [imagePrincipalePreview, setImagePrincipalePreview] = useState<string>("")
   const [imageSecondairePreview, setImageSecondairePreview] = useState<string>("")
 
+  const [customCategories, setCustomCategories] = useState<ProductCategory[]>([])
+  const [newCategoryName, setNewCategoryName] = useState("")
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false)
+
   const safeUpdatePreview = (next: string, which: "principale" | "secondaire") => {
     const setPreview = which === "principale" ? setImagePrincipalePreview : setImageSecondairePreview
     const current = which === "principale" ? imagePrincipalePreview : imageSecondairePreview
@@ -70,7 +74,82 @@ export function ProductsManagement() {
 
   const { data: products, isLoading } = useProducts()
   const { data: categories } = useCategories()
+  const createCategory = useCreateCategory()
   const queryClient = useQueryClient()
+
+  const mergedCategories = useMemo(() => {
+    const base = (categories || []) as ProductCategory[]
+    const map = new Map<number, ProductCategory>()
+    for (const c of base) map.set(c.id, c)
+    for (const c of customCategories) map.set(c.id, c)
+    return Array.from(map.values()).sort((a, b) => {
+      const ao = typeof a.ordre === "number" ? a.ordre : 0
+      const bo = typeof b.ordre === "number" ? b.ordre : 0
+      return ao - bo
+    })
+  }, [categories, customCategories])
+
+  const toCategoryCode = (name: string) => {
+    const base = name
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+    const suffix = Date.now().toString(36).slice(-4)
+    return base ? `${base}-${suffix}` : `cat-${suffix}`
+  }
+
+  const handleCreateCategory = async () => {
+    const name = newCategoryName.trim()
+    if (!name) {
+      toast({
+        title: "Catégorie requise",
+        description: "Veuillez saisir un nom de catégorie.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const alreadyExists = mergedCategories.some(
+      (c) => (c.nom || "").trim().toLowerCase() === name.toLowerCase()
+    )
+    if (alreadyExists) {
+      toast({
+        title: "Catégorie existante",
+        description: "Cette catégorie existe déjà dans la liste.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsCreatingCategory(true)
+    try {
+      const created = await createCategory.mutateAsync({
+        code: toCategoryCode(name),
+        nom: name,
+      })
+
+      setCustomCategories((prev) => [created, ...prev])
+      setNewCategoryName("")
+      setFormData((prev) => ({ ...prev, category_id: String(created.id) }))
+
+      toast({
+        title: "Succès",
+        description: "Catégorie ajoutée avec succès.",
+        variant: "success",
+      })
+    } catch (e) {
+      toast({
+        title: "Erreur",
+        description: e instanceof Error ? e.message : "Erreur lors de l'ajout de la catégorie.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsCreatingCategory(false)
+    }
+  }
 
   const filteredProducts = useMemo(() => {
     const list: Produit[] = products || []
@@ -200,6 +279,15 @@ export function ProductsManagement() {
     setIsSubmitting(true)
 
     try {
+      if (formData.category_id === "__other__") {
+        toast({
+          title: "Catégorie manquante",
+          description: "Veuillez ajouter une nouvelle catégorie ou en sélectionner une existante.",
+          variant: "destructive",
+        })
+        return
+      }
+
       const parsedStock = formData.stock.trim() ? Number.parseInt(formData.stock, 10) : null
       const stockValue = parsedStock != null && Number.isFinite(parsedStock) && parsedStock >= 0 ? parsedStock : null
 
@@ -654,17 +742,47 @@ export function ProductsManagement() {
               <select
                 id="category_id"
                 value={formData.category_id}
-                onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
+                onChange={(e) => {
+                  const v = e.target.value
+                  setFormData({ ...formData, category_id: v })
+                }}
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-gray-500"
                 required
               >
                 <option value="">Sélectionner une catégorie</option>
-                {categories?.map((cat) => (
+                <option value="__other__">Autre…</option>
+                {mergedCategories?.map((cat) => (
                   <option key={cat.id} value={cat.id}>
                     {cat.nom}
                   </option>
                 ))}
               </select>
+
+              {formData.category_id === "__other__" ? (
+                <div className="mt-2 flex gap-2">
+                  <Input
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    placeholder="Nouvelle catégorie"
+                    className="h-10"
+                    disabled={isCreatingCategory}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault()
+                        void handleCreateCategory()
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    onClick={() => void handleCreateCategory()}
+                    disabled={isCreatingCategory}
+                    className="h-10"
+                  >
+                    {isCreatingCategory ? "Ajout..." : "Ajouter"}
+                  </Button>
+                </div>
+              ) : null}
             </div>
             </div>
 

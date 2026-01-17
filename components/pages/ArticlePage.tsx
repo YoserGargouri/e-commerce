@@ -245,7 +245,7 @@ export function ArticlePage({ onNavigate, onAddToCart, cartItemsCount = 0 }: Art
                 <input
                   type="text"
                   placeholder="Rechercher un produit..."
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-gray-800 rounded-lg text-xs sm:text-sm focus:outline-none"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-gray-300 rounded-lg text-xs sm:text-sm focus:outline-none"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />

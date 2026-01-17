@@ -20,6 +20,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
+  const getLoginErrorMessage = (message: string) => {
+    const m = message.toLowerCase()
+    if (m.includes("invalid") && m.includes("login") && m.includes("credentials")) {
+      return "Aucun compte n'existe avec cet email, ou le mot de passe est incorrect."
+    }
+    return message
+  }
+
   useEffect(() => {
     let mounted = true
 
@@ -56,7 +64,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       })
 
       if (error) {
-        return { success: false, error: error.message }
+        return { success: false, error: getLoginErrorMessage(error.message) }
       }
 
       return { success: true }

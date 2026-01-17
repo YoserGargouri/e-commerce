@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "@/hooks/use-toast"
 
 export default function SignUpPage() {
   const router = useRouter()
@@ -24,12 +24,32 @@ export default function SignUpPage() {
 
   const isValidEmail = (value: string) => /^\S+@\S+\.\S+$/.test(value)
 
+  const getAuthErrorMessage = (message: string) => {
+    const m = message.toLowerCase()
+
+    if (m.includes("already") && (m.includes("registered") || m.includes("exists"))) {
+      return "Cet email est déjà utilisé."
+    }
+
+    if (m.includes("password") && (m.includes("short") || m.includes("least") || m.includes("6"))) {
+      return "Le mot de passe est trop court (minimum 6 caractères)."
+    }
+
+    if (m.includes("invalid") && m.includes("email")) {
+      return "Veuillez saisir une adresse email valide."
+    }
+
+    return message
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     const trimmedEmail = email.trim()
+    const trimmedPassword = password.trim()
+    const trimmedConfirmPassword = confirmPassword.trim()
 
-    if (!trimmedEmail || !password || !confirmPassword) {
+    if (!trimmedEmail || !trimmedPassword || !trimmedConfirmPassword) {
       toast({
         title: "Champs requis",
         description: "Veuillez remplir tous les champs.",
@@ -47,7 +67,7 @@ export default function SignUpPage() {
       return
     }
 
-    if (password.length < 6) {
+    if (trimmedPassword.length < 6) {
       toast({
         title: "Mot de passe trop court",
         description: "Le mot de passe doit contenir au moins 6 caractères.",
@@ -56,10 +76,10 @@ export default function SignUpPage() {
       return
     }
 
-    if (password !== confirmPassword) {
+    if (trimmedPassword !== trimmedConfirmPassword) {
       toast({
-        title: "Mots de passe différents",
-        description: "Veuillez confirmer le même mot de passe.",
+        title: "Les deux mots de passe sont différents",
+        description: "Les deux mots de passe sont différents.",
         variant: "destructive",
       })
       return
@@ -70,7 +90,7 @@ export default function SignUpPage() {
     try {
       const { data, error } = await supabase.auth.signUp({
         email: trimmedEmail,
-        password,
+        password: trimmedPassword,
         options: {
           data: {
             role: "admin",
@@ -81,7 +101,7 @@ export default function SignUpPage() {
       if (error) {
         toast({
           title: "Inscription impossible",
-          description: error.message,
+          description: getAuthErrorMessage(error.message),
           variant: "destructive",
         })
         return
@@ -99,7 +119,7 @@ export default function SignUpPage() {
       if (data?.user && !data?.session) {
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email: trimmedEmail,
-          password,
+          password: trimmedPassword,
         })
 
         if (!signInError) {
@@ -110,6 +130,13 @@ export default function SignUpPage() {
           router.push("/X/admin")
           return
         }
+
+        toast({
+          title: "Compte créé",
+          description:
+            "Votre compte a été créé, mais la connexion automatique a échoué. Veuillez vous connecter manuellement.",
+          variant: "destructive",
+        })
       }
 
       toast({

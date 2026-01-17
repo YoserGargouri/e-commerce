@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Shield, Lock, User, Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react"
 import Link from "next/link"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "@/hooks/use-toast"
 
 export default function AdminLoginPage() {
   const router = useRouter()
