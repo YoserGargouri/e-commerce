@@ -7,10 +7,10 @@ export const STORAGE_KEYS = {
 
 // Admin routes
 export const ADMIN_ROUTES = {
-  DASHBOARD: "/admin",
-  ORDERS: "/admin/orders",
-  PRODUCTS: "/admin/products",
-  SETTINGS: "/admin/settings",
+  DASHBOARD: "/X/admin",
+  ORDERS: "/X/admin/orders",
+  PRODUCTS: "/X/admin/products",
+  SETTINGS: "/X/admin/settings",
 } as const
 
 // User routes

@@ -36,7 +36,7 @@ api.interceptors.response.use(
     if (axios.isAxiosError(error)) {
       if (typeof window !== 'undefined' && error.response?.status === 401) {
         localStorage.removeItem('supabase.auth.token')
-        window.location.href = '/login'
+        window.location.href = '/'
       }
     } else {
       // Erreur non Axios (erreur JS générique)

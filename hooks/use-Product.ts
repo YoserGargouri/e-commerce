@@ -7,9 +7,15 @@ export interface Produit {
   description: string | null;
   category_id: number;
   prix: number;
+  stock?: number | null;
   image_principale: string | null;
   image_secondaire: string | null;
   est_nouveau: boolean;
+  dimensions?: string | null;
+  matiere?: string | null;
+  couleur?: string | null;
+  poids?: number | null;
+  origine?: string | null;
   created_at: string | null;
   updated_at: string | null;
 }
@@ -34,9 +40,15 @@ export interface ProduitInsert {
   description?: string | null;
   category_id: number;
   prix: number;
+  stock?: number | null;
   image_principale?: string | null;
   image_secondaire?: string | null;
   est_nouveau: boolean;
+  dimensions?: string | null;
+  matiere?: string | null;
+  couleur?: string | null;
+  poids?: number | null;
+  origine?: string | null;
 }
 
 export interface ProduitUpdate {
@@ -44,9 +56,15 @@ export interface ProduitUpdate {
   description?: string | null;
   category_id?: number;
   prix?: number;
+  stock?: number | null;
   image_principale?: string | null;
   image_secondaire?: string | null;
   est_nouveau?: boolean;
+  dimensions?: string | null;
+  matiere?: string | null;
+  couleur?: string | null;
+  poids?: number | null;
+  origine?: string | null;
   updated_at?: string;
 }
 

@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "@/hooks/use-toast"
 
 export default function SignUpPage() {
   const router = useRouter()
@@ -22,12 +22,34 @@ export default function SignUpPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
+  const isValidEmail = (value: string) => /^\S+@\S+\.\S+$/.test(value)
+
+  const getAuthErrorMessage = (message: string) => {
+    const m = message.toLowerCase()
+
+    if (m.includes("already") && (m.includes("registered") || m.includes("exists"))) {
+      return "Cet email est déjà utilisé."
+    }
+
+    if (m.includes("password") && (m.includes("short") || m.includes("least") || m.includes("6"))) {
+      return "Le mot de passe est trop court (minimum 6 caractères)."
+    }
+
+    if (m.includes("invalid") && m.includes("email")) {
+      return "Veuillez saisir une adresse email valide."
+    }
+
+    return message
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     const trimmedEmail = email.trim()
+    const trimmedPassword = password.trim()
+    const trimmedConfirmPassword = confirmPassword.trim()
 
-    if (!trimmedEmail || !password || !confirmPassword) {
+    if (!trimmedEmail || !trimmedPassword || !trimmedConfirmPassword) {
       toast({
         title: "Champs requis",
         description: "Veuillez remplir tous les champs.",
@@ -36,7 +58,16 @@ export default function SignUpPage() {
       return
     }
 
-    if (password.length < 6) {
+    if (!isValidEmail(trimmedEmail)) {
+      toast({
+        title: "Email invalide",
+        description: "Veuillez saisir une adresse email valide.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (trimmedPassword.length < 6) {
       toast({
         title: "Mot de passe trop court",
         description: "Le mot de passe doit contenir au moins 6 caractères.",
@@ -45,10 +76,10 @@ export default function SignUpPage() {
       return
     }
 
-    if (password !== confirmPassword) {
+    if (trimmedPassword !== trimmedConfirmPassword) {
       toast({
-        title: "Mots de passe différents",
-        description: "Veuillez confirmer le même mot de passe.",
+        title: "Les deux mots de passe sont différents",
+        description: "Les deux mots de passe sont différents.",
         variant: "destructive",
       })
       return
@@ -59,13 +90,18 @@ export default function SignUpPage() {
     try {
       const { data, error } = await supabase.auth.signUp({
         email: trimmedEmail,
-        password,
+        password: trimmedPassword,
+        options: {
+          data: {
+            role: "admin",
+          },
+        },
       })
 
       if (error) {
         toast({
           title: "Inscription impossible",
-          description: error.message,
+          description: getAuthErrorMessage(error.message),
           variant: "destructive",
         })
         return
@@ -76,15 +112,38 @@ export default function SignUpPage() {
           title: "Compte créé",
           description: "Votre compte a été créé avec succès.",
         })
-        router.push("/")
+        router.push("/X/admin")
         return
+      }
+
+      if (data?.user && !data?.session) {
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: trimmedEmail,
+          password: trimmedPassword,
+        })
+
+        if (!signInError) {
+          toast({
+            title: "Connexion réussie",
+            description: "Vous êtes connecté en tant qu'administrateur.",
+          })
+          router.push("/X/admin")
+          return
+        }
+
+        toast({
+          title: "Compte créé",
+          description:
+            "Votre compte a été créé, mais la connexion automatique a échoué. Veuillez vous connecter manuellement.",
+          variant: "destructive",
+        })
       }
 
       toast({
         title: "Vérification email",
         description: "Un email de confirmation a été envoyé si la vérification est activée.",
       })
-      router.push("/")
+      router.push(`/X/admin/login?email=${encodeURIComponent(trimmedEmail)}`)
     } catch (err) {
       toast({
         title: "Erreur",
@@ -104,7 +163,7 @@ export default function SignUpPage() {
             <UserPlus className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Créer un compte</h1>
-          <p className="text-sm sm:text-base text-gray-600">Accédez à votre espace client</p>
+          <p className="text-sm sm:text-base text-gray-600">Créer un compte administrateur</p>
         </div>
 
         <Card className="shadow-xl border-0">
@@ -184,8 +243,8 @@ export default function SignUpPage() {
               </Button>
 
               <div className="text-center text-sm text-gray-600">
-                <Link href="/" className="hover:text-gray-900 underline underline-offset-4">
-                  Retour à l'accueil
+                <Link href="/X/admin/login" className="hover:text-gray-900 underline underline-offset-4">
+                  Déjà un compte ? Se connecter
                 </Link>
               </div>
             </form>

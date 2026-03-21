@@ -6,6 +6,32 @@ import { Footer } from "@/components/layout/Footer"
 import { useSiteData } from "@/hooks/use-SiteData"
 import { toast } from "@/hooks/use-toast"
 
+ const tunisianCitiesByGovernorate: Record<string, string[]> = {
+   Tunis: ["Tunis", "Sidi Hassine", "La Marsa", "Le Kram", "Le Bardo", "La Goulette"],
+   Ariana: ["La Soukra", "Ariana", "Raoued", "Mnihla", "Ettadhamen"],
+   "Ben Arous": ["El Mourouj", "Ben Arous", "Radès", "Fouchana", "Ezzahra", "Mornag"],
+   Manouba: ["Douar Hicher", "Oued Ellil", "La Manouba", "Mornaguia", "Tebourba"],
+   Sfax: ["Sfax", "Sakiet Ezzit", "El Aïn", "Gremda"],
+   Sousse: ["Sousse", "M’saken", "Hammam Sousse", "Kalâa Seghira", "Akouda"],
+   Monastir: ["Monastir", "Moknine", "Jemmal", "Ksar Hellal", "Sahline", "Moôtmar"],
+   Nabeul: ["Nabeul", "Hammamet", "Menzel Temime", "Korba", "Soliman"],
+   Médenine: ["Médenine", "Djerba–Houmt Souk", "Zarzis", "Ben Gardane"],
+   Bizerte: ["Bizerte", "Menzel Bourguiba", "Mateur", "Ras Jebel", "Ghezala"],
+   Gabès: ["Gabès", "El Hamma", "Ghannouch"],
+   Kairouan: ["Kairouan", "Sisseb-Driaat", "Raqqada"],
+   Kébili: ["Kébili", "Douz", "Souk Lahad"],
+   Jendouba: ["Jendouba", "Tabarka", "Ghardimaou", "Balta-Bou Aouane"],
+   Béja: ["Béja", "Medjez el-Bab"],
+   Kasserine: ["Kasserine", "Ennour", "Fériana", "Hassi El Ferid"],
+   "Sidi Bouzid": ["Sidi Bouzid", "Essaïda", "Faiedh Bennour", "Souk Jedid"],
+   Mahdia: ["Mahdia", "Chebba", "Ksour Essef", "El Jem"],
+   Tozeur: ["Tozeur", "Nefta"],
+   Tataouine: ["Tataouine"],
+   Zaghouan: ["Zaghouan", "El Fahs"],
+   Siliana: ["Siliana"],
+   "Le Kef": ["Le Kef"],
+ }
+
 interface CheckoutPageProps {
   onNavigate: (page: Page) => void
   cartItems: CartItem[]
@@ -23,9 +49,11 @@ export function CheckoutPage({ onNavigate, cartItems, onClearCart }: CheckoutPag
     city: "",
     state: "",
     zipCode: "",
-    country: "Maroc",
+    country: "Tunisie",
     orderNotes: "",
   })
+  const [citySelection, setCitySelection] = useState("")
+  const [customCity, setCustomCity] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const subtotal = cartItems.reduce((sum, item) => {
@@ -41,11 +69,32 @@ export function CheckoutPage({ onNavigate, cartItems, onClearCart }: CheckoutPag
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
+  const handleGovernorateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value
+    setFormData((prev) => ({
+      ...prev,
+      state: value,
+      city: "",
+    }))
+    setCitySelection("")
+    setCustomCity("")
+  }
+
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    const finalCity = citySelection === "__OTHER__" ? customCity.trim() : formData.city
     
     // Validation basique
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone || !formData.streetAddress || !formData.city) {
+    if (
+      !formData.firstName ||
+      !formData.lastName ||
+      !formData.email ||
+      !formData.phone ||
+      !formData.streetAddress ||
+      !formData.state ||
+      !finalCity
+    ) {
       toast({
         title: "Erreur",
         description: "Veuillez remplir tous les champs obligatoires.",
@@ -69,6 +118,7 @@ export function CheckoutPage({ onNavigate, cartItems, onClearCart }: CheckoutPag
       // Préparer les données de la commande
       const orderData = {
         ...formData,
+        city: finalCity,
         items: cartItems.map((item) => ({
           id: item.id,
           name: item.name,
@@ -121,10 +171,11 @@ export function CheckoutPage({ onNavigate, cartItems, onClearCart }: CheckoutPag
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white flex flex-col">
       <Header currentPage="checkout" onNavigate={onNavigate} cartItemsCount={cartItems.length} />
 
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-6 sm:py-12">
+      <main className="flex-1">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-6 sm:py-12">
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-12">
           <div className="flex-1">
             <div className="mb-6 sm:mb-8">
@@ -190,24 +241,58 @@ export function CheckoutPage({ onNavigate, cartItems, onClearCart }: CheckoutPag
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-900 mb-2">Ville</label>
-                  <input
-                    type="text"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleInputChange}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-gray-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-900 mb-2">Région/Province</label>
-                  <input
-                    type="text"
+                  <label className="block text-xs sm:text-sm font-medium text-gray-900 mb-2">Gouvernorat</label>
+                  <select
                     name="state"
                     value={formData.state}
-                    onChange={handleInputChange}
+                    onChange={handleGovernorateChange}
                     className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-gray-500"
-                  />
+                  >
+                    <option value="">Sélectionner un gouvernorat</option>
+                    {Object.keys(tunisianCitiesByGovernorate).map((gov) => (
+                      <option key={gov} value={gov}>
+                        {gov}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-900 mb-2">Ville</label>
+                  <select
+                    name="city"
+                    value={citySelection}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      setCitySelection(value)
+
+                      if (value === "__OTHER__") {
+                        setFormData((prev) => ({ ...prev, city: "" }))
+                      } else {
+                        setCustomCity("")
+                        setFormData((prev) => ({ ...prev, city: value }))
+                      }
+                    }}
+                    disabled={!formData.state}
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-gray-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  >
+                    <option value="">Sélectionner une ville</option>
+                    {(tunisianCitiesByGovernorate[formData.state] ?? []).map((city) => (
+                      <option key={city} value={city}>
+                        {city}
+                      </option>
+                    ))}
+                    <option value="__OTHER__">Autre</option>
+                  </select>
+
+                  {citySelection === "__OTHER__" && (
+                    <input
+                      type="text"
+                      value={customCity}
+                      onChange={(e) => setCustomCity(e.target.value)}
+                      placeholder="Saisir votre ville"
+                      className="mt-2 w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-gray-500"
+                    />
+                  )}
                 </div>
               </div>
               
@@ -271,7 +356,8 @@ export function CheckoutPage({ onNavigate, cartItems, onClearCart }: CheckoutPag
             </div>
           </div>
         </div>
-      </div>
+        </div>
+      </main>
 
       <Footer />
     </div>

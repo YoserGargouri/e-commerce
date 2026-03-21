@@ -1,49 +1,97 @@
 "use client"
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react"
-import { useLocalStorage } from "@/hooks/useLocalStorage"
+import React, { createContext, useContext, useEffect, useMemo, useState, ReactNode } from "react"
+import type { Session } from "@supabase/supabase-js"
+import { supabase } from "@/lib/supabase/client"
 
 interface AuthContextType {
   isAuthenticated: boolean
-  login: (username: string, password: string) => boolean
-  logout: () => void
+  isLoading: boolean
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
+  logout: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
-
-const ADMIN_CREDENTIALS = {
-  username: "admin",
-  password: "admin123", // Simple password for demo - in production, use proper authentication
-}
-
-const AUTH_KEY = "ecommerce_admin_auth"
 
 interface AuthProviderProps {
   children: ReactNode
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [isAuthenticated, setIsAuthenticated] = useLocalStorage<boolean>(AUTH_KEY, false)
+  const [session, setSession] = useState<Session | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
-  const login = (username: string, password: string): boolean => {
-    if (
-      username === ADMIN_CREDENTIALS.username &&
-      password === ADMIN_CREDENTIALS.password
-    ) {
-      setIsAuthenticated(true)
-      return true
+  const getLoginErrorMessage = (message: string) => {
+    const m = message.toLowerCase()
+    if (m.includes("invalid") && m.includes("login") && m.includes("credentials")) {
+      return "Aucun compte n'existe avec cet email, ou le mot de passe est incorrect."
     }
-    return false
+    return message
   }
 
-  const logout = () => {
-    setIsAuthenticated(false)
+  useEffect(() => {
+    let mounted = true
+
+    const init = async () => {
+      try {
+        const { data } = await supabase.auth.getSession()
+        if (!mounted) return
+        setSession(data.session)
+      } finally {
+        if (mounted) setIsLoading(false)
+      }
+    }
+
+    void init()
+
+    const { data: subscription } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      if (!mounted) return
+      setSession(nextSession)
+      setIsLoading(false)
+    })
+
+    return () => {
+      mounted = false
+      subscription.subscription.unsubscribe()
+    }
+  }, [])
+
+  const login: AuthContextType["login"] = async (email, password) => {
+    setIsLoading(true)
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (error) {
+        return { success: false, error: getLoginErrorMessage(error.message) }
+      }
+
+      return { success: true }
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const value: AuthContextType = {
-    isAuthenticated,
-    login,
-    logout,
+  const logout: AuthContextType["logout"] = async () => {
+    setIsLoading(true)
+    try {
+      await supabase.auth.signOut()
+      setSession(null)
+    } finally {
+      setIsLoading(false)
+    }
   }
+
+  const value: AuthContextType = useMemo(
+    () => ({
+      isAuthenticated: Boolean(session?.user),
+      isLoading,
+      login,
+      logout,
+    }),
+    [session?.user, isLoading]
+  )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

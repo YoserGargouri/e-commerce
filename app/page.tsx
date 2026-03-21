@@ -10,6 +10,7 @@ import { ContactPage } from "@/components/pages/ContactPage"
 import { AboutPage } from "@/components/pages/AboutPage"
 
 const CART_STORAGE_KEY = "ecommerce_cart_items"
+const LAST_PAGE_STORAGE_KEY = "ecommerce_last_page"
 
 // Fonction pour charger le panier depuis localStorage
 const loadCartFromStorage = (): CartItem[] => {
@@ -57,6 +58,27 @@ export default function Page() {
     }
   }, [])
 
+  // Charger la dernière page demandée (ex: depuis product/[id])
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    try {
+      const storedPage = localStorage.getItem(LAST_PAGE_STORAGE_KEY)
+      if (
+        storedPage === "home" ||
+        storedPage === "article" ||
+        storedPage === "cart" ||
+        storedPage === "checkout" ||
+        storedPage === "contact" ||
+        storedPage === "about"
+      ) {
+        setCurrentPage(storedPage)
+      }
+    } catch {
+      // ignore
+    }
+  }, [])
+
   // Sauvegarder le panier dans localStorage à chaque modification
   useEffect(() => {
     if (cartItems.length > 0) {
@@ -67,6 +89,16 @@ export default function Page() {
       clearCartFromStorage()
     }
   }, [cartItems])
+
+  // Sauvegarder la page courante pour permettre la navigation cross-route
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    try {
+      localStorage.setItem(LAST_PAGE_STORAGE_KEY, currentPage)
+    } catch {
+      // ignore
+    }
+  }, [currentPage])
 
   const handleAddToCart = (item: Product) => {
     // Vérifier si l'article existe déjà dans le panier

@@ -156,6 +156,24 @@ export function OrdersList() {
     return 0
   }
 
+  const statusBadgeClassName = (statut: Commande["statut_commande"]) => {
+    if (statut === "livree") return "bg-green-100 text-green-700"
+    if (statut === "en_preparation") return "bg-yellow-100 text-yellow-800"
+    return ""
+  }
+
+  const getProductPriceByName = (name: string) => {
+    const normalizedName = String(name).trim().toLowerCase()
+    const list: Produit[] = produits || []
+    const match = list.find((p) => (p.nom || "").trim().toLowerCase() === normalizedName)
+    return match?.prix ?? null
+  }
+
+  const safeMoney = (value: unknown): number | null => {
+    const n = typeof value === "number" ? value : Number(value)
+    return Number.isFinite(n) ? n : null
+  }
+
   const handleSetLivree = async (commandeId: string) => {
     try {
       await updateStatus.mutateAsync({ commandeId, statut_commande: "livree" })
@@ -309,7 +327,10 @@ export function OrdersList() {
                           <Badge variant="secondary" className="text-xs">
                             {getItemsCount(order.items)} article{getItemsCount(order.items) > 1 ? "s" : ""}
                           </Badge>
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge
+                            variant="secondary"
+                            className={`text-xs ${statusBadgeClassName(order.statut_commande)}`}
+                          >
                             {formatStatutCommande(order.statut_commande)}
                           </Badge>
                         </div>
@@ -391,7 +412,10 @@ export function OrdersList() {
                             {order.total_commande.toFixed(2)} DTN
                           </TableCell>
                           <TableCell className="text-xs sm:text-sm">
-                            <Badge variant="secondary" className="text-xs">
+                            <Badge
+                              variant="secondary"
+                              className={`text-xs ${statusBadgeClassName(order.statut_commande)}`}
+                            >
                               {formatStatutCommande(order.statut_commande)}
                             </Badge>
                           </TableCell>
@@ -463,7 +487,10 @@ export function OrdersList() {
               </div>
 
               <div className="flex flex-wrap gap-2">
-                <Badge variant="secondary" className="text-xs">
+                <Badge
+                  variant="secondary"
+                  className={`text-xs ${statusBadgeClassName(selectedCommande.statut_commande)}`}
+                >
                   {formatStatutCommande(selectedCommande.statut_commande)}
                 </Badge>
                 <Badge variant="secondary" className="text-xs">
@@ -494,12 +521,19 @@ export function OrdersList() {
                       const normalizedName = String(name).trim().toLowerCase()
                       const imageUrl = normalizedProductImageByName.get(normalizedName) || null
                       const quantity = (item as any)?.quantity ?? (item as any)?.quantite ?? 1
-                      const price =
+                      const qty = safeMoney(quantity) ?? 1
+                      const unitPriceRaw =
                         (item as any)?.prix_unitaire ??
+                        (item as any)?.unit_price ??
                         (item as any)?.price ??
                         (item as any)?.prix ??
                         null
-                      const lineTotal = (item as any)?.sous_total ?? (item as any)?.line_total ?? null
+                      const lineTotalRaw = (item as any)?.sous_total ?? (item as any)?.line_total ?? null
+
+                      const lineTotal = safeMoney(lineTotalRaw)
+                      const unitPrice = safeMoney(unitPriceRaw) ?? (name ? safeMoney(getProductPriceByName(name)) : null)
+                      const computedTotal = unitPrice != null ? unitPrice * qty : null
+                      const displayTotal = lineTotal ?? computedTotal
                       return (
                         <div key={idx} className="p-3 flex items-start justify-between gap-3">
                           <div className="flex items-start gap-3 min-w-0">
@@ -518,11 +552,7 @@ export function OrdersList() {
                             </div>
                           </div>
                           <div className="text-sm font-semibold text-gray-900 whitespace-nowrap">
-                            {lineTotal != null
-                              ? `${Number(lineTotal).toFixed(2)} DTN`
-                              : price != null
-                                ? `${Number(price).toFixed(2)} DTN`
-                                : ""}
+                            {displayTotal != null ? `${displayTotal.toFixed(2)} DTN` : unitPrice != null ? `${unitPrice.toFixed(2)} DTN` : ""}
                           </div>
                         </div>
                       )

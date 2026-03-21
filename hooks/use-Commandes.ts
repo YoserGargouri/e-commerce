@@ -15,7 +15,7 @@ export interface Commande {
   frais_livraison: number;
   total_commande: number;
   items: any; // JSONB
-  statut_commande: 'en_attente' | 'payee' | 'en_preparation' | 'expediee' | 'livree' | 'annulee' | 'remboursee';
+  statut_commande: 'payee' | 'en_preparation' | 'expediee' | 'livree' | 'annulee' | 'remboursee';
   statut_paiement: 'en_attente' | 'paye' | 'echoue' | 'rembourse' | 'partiel' | 'en_attente_paiement';
   created_at: string | null;
   updated_at: string | null;
@@ -195,7 +195,6 @@ export function useDeleteCommande() {
 // Fonction utilitaire pour formater le statut
 export function formatStatutCommande(statut: Commande['statut_commande']): string {
   const statuts: Record<Commande['statut_commande'], string> = {
-    en_attente: 'En attente',
     payee: 'Payée',
     en_preparation: 'En préparation',
     expediee: 'Expédiée',
@@ -209,12 +208,12 @@ export function formatStatutCommande(statut: Commande['statut_commande']): strin
 // Fonction utilitaire pour formater le statut de paiement
 export function formatStatutPaiement(statut: Commande['statut_paiement']): string {
   const statuts: Record<Commande['statut_paiement'], string> = {
-    en_attente: 'En attente',
+    en_attente: 'En cours',
     paye: 'Payé',
     echoue: 'Échoué',
     rembourse: 'Remboursé',
     partiel: 'Partiel',
-    en_attente_paiement: 'En attente de paiement',
+    en_attente_paiement: 'En cours de paiement',
   };
   return statuts[statut] || statut;
 }
