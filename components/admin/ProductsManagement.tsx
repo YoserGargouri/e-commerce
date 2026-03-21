@@ -16,6 +16,43 @@ import { useQueryClient } from "@tanstack/react-query"
 import { toast } from "@/hooks/use-toast"
 import type { Produit } from "@/hooks/use-Product"
 
+function getErrorMessage(error: unknown) {
+  if (!error) return "Erreur inconnue."
+
+  if (error instanceof Error) {
+    return error.message || "Erreur inconnue."
+  }
+
+  if (typeof error === "string") {
+    return error
+  }
+
+  if (typeof error === "object") {
+    const anyErr = error as any
+    const message =
+      typeof anyErr.message === "string"
+        ? anyErr.message
+        : typeof anyErr.error_description === "string"
+          ? anyErr.error_description
+          : typeof anyErr.error === "string"
+            ? anyErr.error
+            : ""
+
+    const details = typeof anyErr.details === "string" ? anyErr.details : ""
+    const hint = typeof anyErr.hint === "string" ? anyErr.hint : ""
+    const code = typeof anyErr.code === "string" ? anyErr.code : ""
+
+    const parts = [message, details, hint, code ? `Code: ${code}` : ""].filter(Boolean)
+    if (parts.length > 0) return parts.join("\n")
+  }
+
+  try {
+    return JSON.stringify(error)
+  } catch {
+    return "Erreur inconnue."
+  }
+}
+
 export function ProductsManagement() {
   const [searchQuery, setSearchQuery] = useState("")
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
@@ -88,6 +125,8 @@ export function ProductsManagement() {
       return ao - bo
     })
   }, [categories, customCategories])
+
+  const hasCategories = mergedCategories.length > 0
 
   const toCategoryCode = (name: string) => {
     const base = name
@@ -203,7 +242,7 @@ export function ProductsManagement() {
     setFormData({
       nom: "",
       description: "",
-      category_id: "",
+      category_id: hasCategories ? "" : "__other__",
       prix: "",
       stock: "",
       dimensions: "",
@@ -215,6 +254,7 @@ export function ProductsManagement() {
       image_secondaire: "",
       est_nouveau: false,
     })
+    setNewCategoryName("")
     setImagePrincipaleFile(null)
     setImageSecondaireFile(null)
     setImagePrincipalePreview("")
@@ -416,9 +456,10 @@ export function ProductsManagement() {
       setImagePrincipalePreview("")
       setImageSecondairePreview("")
     } catch (error) {
+      const description = getErrorMessage(error)
       toast({
-        title: "Erreur",
-        description: "Erreur lors de l'enregistrement du produit.",
+        title: editingProduct ? "Erreur" : "Erreur lors de la création du produit",
+        description,
         variant: "destructive",
       })
     } finally {
@@ -739,27 +780,55 @@ export function ProductsManagement() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="category_id" className="text-sm">Catégorie *</Label>
-              <select
-                id="category_id"
-                value={formData.category_id}
-                onChange={(e) => {
-                  const v = e.target.value
-                  setFormData({ ...formData, category_id: v })
-                }}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-gray-500"
-                required
-              >
-                <option value="">Sélectionner une catégorie</option>
-                <option value="__other__">Autre…</option>
-                {mergedCategories?.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.nom}
-                  </option>
-                ))}
-              </select>
+              {hasCategories ? (
+                <>
+                  <select
+                    id="category_id"
+                    value={formData.category_id}
+                    onChange={(e) => {
+                      const v = e.target.value
+                      setFormData({ ...formData, category_id: v })
+                    }}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-gray-500"
+                    required
+                  >
+                    <option value="">Sélectionner une catégorie</option>
+                    <option value="__other__">Autre…</option>
+                    {mergedCategories?.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.nom}
+                      </option>
+                    ))}
+                  </select>
 
-              {formData.category_id === "__other__" ? (
-                <div className="mt-2 flex gap-2">
+                  {formData.category_id === "__other__" ? (
+                    <div className="mt-2 flex gap-2">
+                      <Input
+                        value={newCategoryName}
+                        onChange={(e) => setNewCategoryName(e.target.value)}
+                        placeholder="Nouvelle catégorie"
+                        className="h-10"
+                        disabled={isCreatingCategory}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault()
+                            void handleCreateCategory()
+                          }
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        onClick={() => void handleCreateCategory()}
+                        disabled={isCreatingCategory}
+                        className="h-10"
+                      >
+                        {isCreatingCategory ? "Ajout..." : "Ajouter"}
+                      </Button>
+                    </div>
+                  ) : null}
+                </>
+              ) : (
+                <div className="flex gap-2">
                   <Input
                     value={newCategoryName}
                     onChange={(e) => setNewCategoryName(e.target.value)}
@@ -782,7 +851,7 @@ export function ProductsManagement() {
                     {isCreatingCategory ? "Ajout..." : "Ajouter"}
                   </Button>
                 </div>
-              ) : null}
+              )}
             </div>
             </div>
 
