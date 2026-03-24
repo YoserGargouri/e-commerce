@@ -71,5 +71,4 @@ npm start
 ```
 
 ## 📄 Licence
-
 Projet privé - Tous droits réservés
