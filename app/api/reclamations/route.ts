@@ -94,7 +94,15 @@ export async function POST(request: Request) {
 
     if (error) {
       return NextResponse.json(
-        { error: `Échec de la création de la réclamation : ${error.message}` },
+        {
+          error: `Échec de la création de la réclamation : ${error.message}`,
+          supabase: {
+            message: error.message,
+            details: (error as any).details ?? null,
+            hint: (error as any).hint ?? null,
+            code: (error as any).code ?? null,
+          },
+        },
         { status: 400 }
       )
     }
